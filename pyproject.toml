@@ -23,3 +23,10 @@ dependencies = [
 
 [tool.uv.sources]
 dowhy = { git = "https://github.com/py-why/dowhy.git", rev = "9930609212736449eb1c248440228479e4f99bf4" }
+
+[build-system]
+requires = ["uv_build>=0.8.0,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "cdp"
