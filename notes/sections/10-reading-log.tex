@@ -1,0 +1,76 @@
+\section{Reading log}
+\label{sec:reading-log}
+
+Dated, short entries. Not a summary of the source --- a record of what was
+personally taken from it and what was unclear. Newest entry first; add new
+entries just below this line.
+
+\subsection*{2026-09-19}
+\addcontentsline{toc}{subsection}{2026-09-19}
+\begin{itemize}
+  \item Rewrote the whole notes vault from Markdown into this \LaTeX{}
+    document with Claude, at the mentor's/project's preference for proper
+    math typesetting and a compilable PDF.
+  \item Caught and fixed a real error in Figure~\ref{fig:ecm-base}: it only
+    drew the chain $W\to A\to M\to R$, missing three edges
+    ($W\to M$, $W \to R$, $A \to R$) that the handout's own diagram has ---
+    found by zooming into the source PDF at high resolution and tracing the
+    arrows by hand rather than trusting memory.
+  \item Read \texttt{docs/Trustworthy Causal Explanations \_ Joshua Loftus.docx.pdf}
+    in full (only 2 pages). Key facts: this is a Fall 2026, 13-week
+    team project advised by Joshua Loftus (LSE); weekly supervision meetings
+    plus Slack; deliverables include an open-source Python implementation,
+    simulation/real-data experiments, and a report targeting a conference
+    submission (ICML/UAI/NeurIPS) with students as co-authors. It gives an
+    actual week-by-week timeline (Weeks 1--2 foundations, 3--5 discrete
+    AIPW, 6--7 practical rules $+$ interaction plot, 8--9 robustness, 10
+    break, 11--12 continuous features $+$ comparison study, 13 wrap-up) that
+    lines up closely with handout \S1.9's feasibility table.
+  \item New open question from that doc: Weeks 1--2 ask us to run ``the
+    project's verified check scripts'' and reproduce the total-curve
+    identity by exact enumeration using an existing code base --- that code
+    base isn't in \texttt{docs/}. Logged in \S\ref{sec:questions}.
+  \item \textbf{Mentor gave the actual prescribed reading order} (supersedes
+    my own guessed order below): (1) Molnar's PDP chapter; (2) the CDP
+    paper, arXiv:2303.04209, \textbf{\S1--2 carefully, skim the rest}; (3)
+    this project explainer (\texttt{docs/CDP\_explainer\_students.pdf}).
+    Two corrections to how I'd been scoping things: ``\S1--2'' means the
+    \emph{whole} methodology section (\S2.1 through \S2.6, not just
+    \S2.4--2.6 as I'd guessed), and the paper comes \emph{before}
+    rereading the handout, not after --- read the source's own definitions
+    first, then see how the handout reframes/scopes them for this project,
+    rather than the other way around.
+  \item Finished the ``Assumed background'' section of these notes
+    (\S\ref{sec:background}). Started step 1 of the prescribed order above:
+    Molnar's IML PDP chapter (\texttt{docs/IML/19 Partial Dependence Plot
+    (PDP)...html}). Added active-recall questions 39--50 to
+    \texttt{recall.tex} for it as I went.
+\end{itemize}
+
+\subsection*{2026-09-18}
+\addcontentsline{toc}{subsection}{2026-09-18}
+\begin{itemize}
+  \item Set up the original notes vault + a concept-map overview artifact
+    with Claude.
+  \item Skimmed (not fully read): \texttt{docs/CDP\_explainer\_students.pdf}
+    \S0--\S2 (whole handout structure), \texttt{docs/2303.04209v2.pdf} (CDP
+    paper) \S1 intro $+$ start of \S2.1 methodology.
+  \item Not yet touched: arXiv paper \S2.4--2.6 (the actual
+    CDP definitions/theorems in the source paper's own notation),
+    \texttt{docs/Trustworthy Causal Explanations \_ Joshua Loftus.docx.pdf},
+    \texttt{docs/IML/...Partial Dependence Plot...html} (Molnar's PDP
+    chapter --- good for building PDP intuition before tackling
+    \S1.1's identification table).
+  \item Open question logged: handout references \texttt{PLAN\_v3.md} \S10
+    which isn't in \texttt{docs/} --- see \S\ref{sec:questions}.
+\end{itemize}
+
+% Next entry, per the mentor's actual prescribed order:
+% 1. Molnar IML PDP chapter (docs/IML/...) in full.
+% 2. arXiv paper (docs/2303.04209v2.pdf) §1-2 carefully (all of §2.1-2.6),
+%    skim §3 Experiments and §4 Applications/Extensions/Related Work.
+%    Reconcile its formal TDP/NDDP/NIDP/PCDP definitions with
+%    Sec. \ref{sec:bigpicture} as you go.
+% 3. docs/CDP_explainer_students.pdf in full, directly (not just via these
+%    notes) -- read last, to see how it scopes/reframes the paper for
+%    this specific project.

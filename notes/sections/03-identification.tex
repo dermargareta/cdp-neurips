@@ -1,0 +1,108 @@
+\section{Identification: what each plot needs from the data}
+\label{sec:identification}
+
+\emph{Source: handout \S1.1. This is the intern-term paper's (``Paper A'')
+first result. Status: skeleton from a first read.}
+
+\subsection{The reduced form}
+
+Let $R$ be the features other than $A$ and its parents $W$. Let
+$Q(dr \mid a, w)$ be the conditional law of $R$ given $(A,W)$ --- the
+\textbf{reduced form}. Crucially, this is \emph{learnable straight from
+data} --- no ECM structural equations needed.
+
+\subsection{Per-plot identification table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}p{2.1cm}p{4.4cm}p{3.6cm}p{3.4cm}@{}}
+\toprule
+\textbf{Plot} & \textbf{Population target} & \textbf{What it consumes} &
+\textbf{Statistical character} \\
+\midrule
+TDP & $\int P(dw) \int Q(dr\mid a,w)\, f(a,w,r)$ & parents $+$ reduced form &
+  AIPW; $\sqrt{n}$ at discrete levels \\
+NDDP $=$ PDP & $E[f(a, X_{-A})]$ & \textbf{no causal nuisance at all} ---
+  only $f$ and the reference distribution of $X_{-A}$ & sample mean of a
+  known function; $\sqrt{n}$ at each $a$ \\
+NIDP & $\int P(da', dw) \int Q(dr\mid a,w)\, f(a', w, r)$ & parents $+$
+  reduced form $+$ law of $A$ given $W$ & its own influence function;
+  $\sqrt{n}$ at discrete levels \\
+PCDP & needs the graph \emph{inside} $R$ & more than the reduced form (two
+  graphs with the same data give different answers) & g-formula \\
+\bottomrule
+\end{tabular}
+\caption{Identification of each named plot (handout \S1.1).}
+\label{tab:identification}
+\end{table}
+
+\emph{Reading the three dense formulas in words:} TDP's
+$\int P(dw) \int Q(dr\mid a,w)\, f(a,w,r)$ says --- go age group by age
+group ($\int P(dw)$, weighting by how common each age group actually is);
+within each age group, average over what weight-and-blood-pressure values
+typically go with exercise level $a$ there ($\int Q(dr\mid a,w)$, the
+reduced form); then plug each $(a,w,r)$ combination into the model $f$ and
+average. NIDP's formula is almost identical but starts by also averaging
+over exercise levels $a'$ drawn the way they actually occur for each age
+group ($\int P(da',dw)$) before asking what downstream values go with the
+\emph{target} level $a$ --- that's the ``your own exercise, but their
+downstream values'' mixing. NDDP's $E[f(a,X_{-A})]$ is the simplest: just
+plug the fixed value $a$ in for exercise, leave every other feature exactly
+as recorded in the data, run it through $f$, and average --- no age
+groups, no reduced form, nothing learned about causal structure at all.
+
+\textbf{Takeaway to hold onto:} three of the four named plots (TDP, NDDP,
+NIDP) need \emph{only} the parents of $A$ plus one reduced form --- fitting
+every equation of the ECM is never required. Only PCDP needs the internal
+graph structure of $R$. This is what makes ``adjustment''
+(\S\ref{sec:estimation}) a real alternative to ``propagation''
+(\S\ref{sec:propagation}) for three of the four plots.
+
+\subsection{NIDP \texorpdfstring{$=$}{=} a known bridge mean (reuse, not a new discovery)}
+
+\reusetag{Fulcher, Shpitser, Marealle \& Tchetgen Tchetgen 2020, JRSSB}
+``Your own $A$, but the downstream values you'd have had under $A=a$'' is
+exactly their \textbf{bridge mean} $\Psi(a) = E[Y(A, Z(a))]$ from the
+population-intervention indirect-effect literature ($Z=$ downstream
+features, $Y=f$) --- in words, plug each person's \emph{own actual}
+exercise level ($A$, not $a$) into the model, but pair it with the
+downstream feature values ($Z(a)$) they \emph{would have had} under the
+hypothetical exercise level $a$, then average over everyone. It mixes one
+real, observed input with one counterfactual input for the same person.
+Their Lemma~1 gives the formula, their Theorem~1 gives its
+influence function (one term drops out here because $Y^*=f(X)$ is
+\emph{deterministic}, not noisy), and their doubly-robust estimator applies
+directly.
+
+What's \newtag~here specifically: recognizing the published NIDP \emph{is}
+this object, that the covariate set reduces to just the parents of $A$, and
+the simplifications that follow from $f$ being a known function rather than
+an unknown outcome-generating process. Caveat: handled for
+\textbf{discrete $A$ only} this term --- continuous-$A$ NIDP needs its own
+theory.
+
+\subsection{Direct \texorpdfstring{$+$}{+} indirect \texorpdfstring{$\neq$}{!=} total}
+
+\newtag, modest. With $B$ the average prediction:
+\[
+  \theta(a) - B \;=\; [\mathrm{NDDP}(a) - B] + [\mathrm{NIDP}(a) - B] + J(a),
+\]
+(in words: the total curve's distance from the average, on the left, isn't
+simply the direct effect's distance plus the indirect effect's distance ---
+there's a leftover term $J(a)$ needed to make the two sides balance; see
+\S\ref{sec:bigpicture} for the full walkthrough). $J$ is an interaction remainder --- it vanishes only when $f$ is additive in
+$a$ and the downstream features. Toy counterexample: $A \sim \mathrm{Bern}(p)$,
+$R(a)=a$, $f = a\cdot r$: the total contrast is $1$, but the direct and
+indirect contrasts are each only $p$. \textbf{Don't assume direct $+$
+indirect sums to total} --- $J$ should be plotted alongside them, not
+ignored.
+
+\begin{openquestions}
+  \item Why does PCDP specifically need the graph \emph{inside} $R$, when
+    TDP/NDDP/NIDP don't need any equations at all? (Intuition: fixing an
+    intermediate feature ``cuts'' a path in a way sensitive to which
+    downstream variable causes which --- worth confirming with a toy SCM.)
+  \item Verify \S1.1's table by exact enumeration in toy SCMs --- handout
+    \S1.9 marks this as intern-feasible / light supervision (\feasyes).
+    Good first task.
+\end{openquestions}

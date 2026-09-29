@@ -1,0 +1,66 @@
+\section{Glossary}
+\label{sec:glossary}
+
+Definitions as used \emph{in this project} (handout
+\texttt{docs/CDP\_explainer\_students.pdf} and Loftus, Bynum \& Hansen,
+arXiv:2303.04209). Each row points to the section where the term is
+developed.
+
+\begin{longtable}{@{}p{3.1cm}p{7.4cm}p{2.4cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Means, here} & \textbf{See} \\
+\midrule
+\endhead
+ECM & ``Explanatory causal model'' --- the analyst's DAG over the model's
+  \emph{features} (not a claim about the real world, just the assumption
+  used to define the explanation) & \S\ref{sec:bigpicture} \\
+$Y^*$, constructed outcome & The fitted model's output, $Y^*=f(X)$, treated
+  as if it were an outcome variable for causal-inference purposes &
+  \S\ref{sec:bigpicture} \\
+PDP & Partial Dependence Plot (Friedman 2001): average $f$ over the data
+  with feature $A$ set to $a$, other features left at recorded values &
+  \S\ref{sec:bigpicture} \\
+ICE & Individual Conditional Expectation plot: one PDP-style curve per
+  observation, not averaged & \S\ref{sec:papers} \\
+PDP-based feature importance & Variance (numerical features) or range$/4$
+  (categorical) of the PDP curve's own values --- how much the curve moves,
+  as a single number; blind to interaction effects & \S\ref{sec:bigpicture} \\
+TDP & Total Dependence Plot: $\operatorname{do}(A=a)$, let downstream
+  features respond & \S\ref{sec:bigpicture} \\
+NDDP & Natural Direct Dependence Plot: set $A=a$, hold downstream features
+  at natural values --- provably equals the PDP & \S\ref{sec:bigpicture} \\
+NIDP & Natural Indirect Dependence Plot: keep your own $A$, but downstream
+  features move to where they'd be under $A=a$ & \S\ref{sec:bigpicture} \\
+PCDP & Partially Controlled Dependence Plot: $\operatorname{do}(A=a)$
+  \emph{and} fix another feature & \S\ref{sec:bigpicture} \\
+Reduced form, $Q(dr\mid a,w)$ & Conditional law of the non-parent features
+  $R$ given $(A,W)$ --- learnable straight from data, no ECM equations
+  needed & \S\ref{sec:identification} \\
+Bridge mean & Fulcher et al.'s object $\Psi(a)=E[Y(A,Z(a))]$; turns out to
+  be exactly the NIDP & \S\ref{sec:identification} \\
+AIPW & Augmented inverse-probability weighting: doubly-robust estimator,
+  consistent if \emph{either} the propensity or the outcome regression is
+  right & \S\ref{sec:estimation} \\
+Cross-fitting & Fit nuisance models on one data split, evaluate on another,
+  swap --- lets flexible ML be used for nuisances and still get valid Wald
+  intervals & \S\ref{sec:estimation} \\
+Efficient covariate set & Not just \emph{a} valid adjustment set (e.g.\
+  parents $W$) but the one minimizing variance --- here, all
+  non-descendants of $A$ when $f$ uses every feature &
+  \S\ref{sec:estimation} \\
+Non-overlap ratio & Diagnostic (Bao \& Schomaker 2026) for how much the
+  curve at $a$ relies on extrapolation vs.\ observed data overlap &
+  \S\ref{sec:propagation} \\
+Tipping strength & Cinelli--Hazlett robustness value, reparameterized per
+  ECM edge: how strong an unmeasured confounder $U$ would need to be to flip
+  the curve's slope & \S\ref{sec:propagation} \\
+Propagation & Alternative to adjustment: fit every ECM structural equation
+  and simulate counterfactuals person-by-person (what the original CDP
+  paper does) & \S\ref{sec:propagation} \\
+\bottomrule
+\caption{Project glossary.}
+\label{tab:glossary}
+\end{longtable}
+
+\emph{Add rows as new project-specific terms are met --- don't let this go
+stale.}

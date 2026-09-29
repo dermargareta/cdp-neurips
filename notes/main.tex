@@ -1,0 +1,92 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage[shortlabels]{enumitem}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{parskip}
+\usepackage{hyperref}
+
+% ---------------------------------------------------------------------------
+% Colors (loosely matching the companion web artifact's palette)
+% ---------------------------------------------------------------------------
+\definecolor{accentc}{HTML}{2A4FC7}   % set to the counterfactual value
+\definecolor{respondc}{HTML}{B8730E}  % responds / recomputed
+\definecolor{naturalc}{HTML}{6B7280}  % kept at natural / recorded value
+\definecolor{reusec}{HTML}{1E8F82}    % REUSE tag
+\definecolor{newc}{HTML}{B23A63}      % NEW tag
+\definecolor{feasyesc}{HTML}{2F7D3F}
+\definecolor{feasmodc}{HTML}{B8860B}
+\definecolor{feasnoc}{HTML}{B33A3A}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accentc,
+  citecolor=accentc,
+  urlcolor=accentc,
+  pdftitle={Causal Dependence Plots --- Project Notes},
+  pdfauthor={RAI}
+}
+
+% ---------------------------------------------------------------------------
+% Convenience macros (mirror the Markdown vault's REUSE/NEW/open-question style)
+% ---------------------------------------------------------------------------
+\newcommand{\reusetag}[1]{\textcolor{reusec}{\textbf{[REUSE: #1]}}}
+\newcommand{\newtag}{\textcolor{newc}{\textbf{[NEW]}}}
+\newcommand{\feasyes}{\textcolor{feasyesc}{$\bullet$}~intern-feasible}
+\newcommand{\feasmod}{\textcolor{feasmodc}{$\bullet$}~moderate supervision}
+\newcommand{\feasno}{\textcolor{feasnoc}{$\bullet$}~supervisor-owned}
+
+\newenvironment{openquestions}{%
+  \par\smallskip\noindent\textbf{Open questions}%
+  \begin{itemize}[leftmargin=1.4em]
+}{%
+  \end{itemize}\par
+}
+
+% ---------------------------------------------------------------------------
+% TikZ styles shared by every ECM/intervention diagram (see sec. Big picture)
+% ---------------------------------------------------------------------------
+\tikzset{
+  defaultnode/.style={rectangle, rounded corners=2pt, draw=black!55, fill=white,
+    minimum width=1.6cm, minimum height=0.85cm, font=\small, align=center},
+  accentnode/.style={defaultnode, draw=accentc, fill=accentc, text=white},
+  respondnode/.style={defaultnode, draw=respondc, fill=respondc, text=white},
+  naturalnode/.style={defaultnode, draw=naturalc, fill=naturalc!15, text=naturalc},
+  targetnode/.style={defaultnode, draw=black, line width=1.1pt},
+  normaledge/.style={-{Stealth[length=2.4mm]}, draw=black!70, line width=0.75pt},
+  severededge/.style={-{Stealth[length=2.4mm]}, draw=black!45,
+    dash pattern=on 3pt off 2pt, line width=0.75pt},
+  accentedge/.style={-{Stealth[length=2.4mm]}, draw=accentc, line width=1.2pt},
+}
+
+\title{Causal Dependence Plots\\[4pt]\large Project Notes --- RAI}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\input{sections/00-howto}
+\input{sections/01-background}
+\input{sections/02-big-picture}
+\input{sections/03-identification}
+\input{sections/04-estimation-and-covariates}
+\input{sections/05-continuous-a}
+\input{sections/06-propagation-and-sensitivity}
+\input{sections/07-practical-rules-and-scope}
+\input{sections/08-glossary}
+\input{sections/09-papers}
+\input{sections/10-reading-log}
+\input{sections/11-questions}
+
+\end{document}

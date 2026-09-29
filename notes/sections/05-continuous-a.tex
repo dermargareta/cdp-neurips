@@ -1,0 +1,62 @@
+\section{Continuous \texorpdfstring{$A$}{A}: bins first, curves second}
+\label{sec:continuous}
+
+\emph{Source: handout \S1.4. Status: skeleton from a first read.}
+
+\subsection{Bins (primary target)}
+
+At each bin $B_k$, report the fixed-weight average
+$\psi_k = \int_{B_k} \theta(a)\, g_k(a)\, da$ --- in words, don't report the
+true curve $\theta(a)$ at every single value of $a$ in the bin; instead,
+report one number per bin, obtained by averaging $\theta(a)$ over all the
+$a$-values inside that bin ($B_k$), using a weighting rule $g_k$ that's
+written down \emph{before} looking at the data (e.g.\ ``just weight every
+$a$-value in the bin equally''). Why fix the weight ahead of time rather
+than use the observed distribution of $A$ inside the bin: weighting by the
+observed distribution makes the target depend on the data law and adds a
+term to the standard error. This is a regular, $\sqrt{n}$ target, estimated
+by the same AIPW machinery (Eq.~\ref{eq:aipw}) with weight
+$g_k(A)/\hat\pi(A\mid Z)$ --- and it does not depend on which valid $Z$ was
+chosen (\S\ref{sec:estimation}).
+
+\subsection{Smoothed curve --- two tiers}
+
+\begin{itemize}
+  \item \textbf{Smoothed curve (extension, supervisor-owned)}:
+    $\theta_h = K_h * \theta$ at a declared bandwidth $h$ --- in words, the
+    smoothed curve's value at a point is a local weighted average of the
+    true curve $\theta$ near that point, where the kernel $K_h$ is the rule
+    for how much weight nearby $a$-values get (points closer than the
+    bandwidth $h$ count more, points farther away count less or not at
+    all) --- kernel-weighted
+    AIPW, bands via multiplier bootstrap. Works for \emph{any} $f$ ---
+    important because a tree that splits on $A$ can make $\theta$ itself
+    jumpy, and the ``smooth curve'' theory below assumes smoothness a jumpy
+    $\theta$ doesn't have.
+  \item \textbf{Smooth curve (secondary, if $\theta$ is actually smooth)}:
+    cite Takatsu \& Westling's debiased local-linear estimator, or Semenova
+    \& Chernozhukov's cross-fitted series estimator (its variance has an
+    extra term that must not be dropped). Pseudo-outcome must be Kennedy's
+    construction --- the naive ``$\hat\mu + (Y^*-\hat\mu)/\hat\pi$ regressed
+    on $A$'' estimates the wrong thing (handout notes it was checked to be
+    off by $0.9$ in a toy example --- a concrete trap to avoid
+    reinventing).
+\end{itemize}
+
+\subsection{Bias policy}
+
+\newtag~correction. Any uncorrected smoother at its best bandwidth has bias
+as large as its standard error, so naive confidence bands
+\textbf{under-cover}. The project's earlier prototype hit exactly this
+(0.89 coverage instead of $\sim$0.95). Fix: debiasing, deliberate
+undersmoothing, or report bands for $\theta_h$ itself rather than pretending
+they are bands for the unsmoothed $\theta$.
+
+\begin{openquestions}
+  \item Handout marks the (primary) fixed-bin estimator as intern-feasible
+    (\feasmod{} --- ``representer, bootstrap over a finite vector''). The
+    smoothed curve is explicitly \feasno{} / not intern-feasible --- don't
+    invest here without direction.
+  \item Understand precisely why a data-dependent bin weight adds a
+    standard-error term --- worth a small derivation.
+\end{openquestions}

@@ -1,0 +1,61 @@
+\section{Practical rules, and what this term's paper does \emph{not} claim}
+\label{sec:scope}
+
+\emph{Source: handout \S1.7--1.9, \S2. Status: skeleton from a first read.}
+
+\subsection{Two cheap but important rules (\S1.7)}
+
+\newtag, cheap, important.
+\begin{enumerate}
+  \item \textbf{Explanatory data must be held out.} $Y_i^* = f(X_i)$ on rows
+    used to \emph{train} $f$ is not a fair sample of what $f$ does (a random
+    forest nearly reproduces its own training outcomes). Draw every curve
+    on rows the model never saw. Out-of-bag / cross-fitted predictions are
+    predictions of \emph{different} models, not of $f$ itself --- don't
+    substitute them.
+  \item \textbf{Name the reference population.} The outer average is over
+    some distribution of $W$; training cohort, held-out sample, and
+    deployment population give genuinely different curves whenever the
+    effect varies with $w$. This term's inference is all for the
+    \emph{held-out sample's} population. Carrying a curve to a different
+    population (``transport'') needs extra data and different formulas ---
+    explicitly \textbf{out of scope} this term.
+\end{enumerate}
+
+\subsection{What Paper A does \emph{not} claim (\S1.8)}
+
+Not claiming: that parent adjustment, AIPW, cross-fitting, or dose-response
+bands are new ideas; that the method works ``without a causal model'' (it
+always needs the ECM); that this is the first semiparametric inference for
+causal explainability (cf.\ Zhang \& Gao 2026; Gao \& Zhao 2024 --- different
+quantities, worth knowing about but not the same target); bands for
+\emph{individual per-person} curves (out of scope --- only aggregate curves
+here).
+
+\textbf{Why this matters for us as interns:} knowing the boundary of the
+claim keeps write-ups honest and stops accidental overclaiming of novelty
+that belongs to cited work --- exactly what the REUSE/NEW tagging throughout
+the handout is for.
+
+\subsection{Paper C --- later project, not this term (\S2)}
+
+A theory paper making the \S\ref{sec:bigpicture} picture rigorous: why a
+\emph{deterministic} output node removes the cross-world content of edge
+interventions; influence functions for all four plots (NIDP's is Fulcher's;
+PCDP's is a g-formula one); efficiency results when the whole DAG is used;
+and \textbf{graph uncertainty} --- from observational data one often cannot
+orient every edge, so there are several candidate parent sets and several
+candidate curves. Caution flagged in the handout: for linear-Gaussian
+models, all graphs in a Markov-equivalence class have identical likelihood,
+so a BIC ``neighbourhood'' of orientations is \emph{empty} there; for
+nonlinear models, orientations actually get scored differently. A couple of
+intern-sized pieces exist here (simulating candidate curves with IDA
+software; a merging algorithm) but the core theory is research-level ---
+\textbf{not this term's scope}, noted here mainly so this term's work
+doesn't accidentally drift into it.
+
+\begin{openquestions}
+  \item None yet --- revisit once Paper A's early tasks
+    (\S\ref{sec:identification}--\S\ref{sec:estimation}) are underway and it
+    becomes clearer where the term's actual scope will land.
+\end{openquestions}

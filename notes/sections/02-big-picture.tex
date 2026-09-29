@@ -1,0 +1,590 @@
+\section{The big picture: why PDPs aren't enough, and what CDPs do instead}
+\label{sec:bigpicture}
+
+\emph{Source: handout \S0; CDP paper (arXiv:2303.04209) \S1 intro. Status:
+skeleton from a first read --- reconcile with the paper's own \S1--2 (read
+carefully, per the mentor's prescribed order) once read in full. New to
+DAGs / the do-operator / backdoor adjustment / potential outcomes? Start
+with \S\ref{sec:background} --- everything below assumes it.}
+
+\subsection{The problem}
+
+A fitted model $f$ (any learner) exists, and a picture of how its output
+depends on one feature $A$ is wanted, when the features are
+\emph{causally related} to each other (not independent).
+
+\textbf{Running example} (used throughout --- reuse it in notes and
+questions so everything lines up): age $W \to$ exercise $A \to$ weight
+$M \to$ blood pressure $R$; $f$ predicts 10-year cardiovascular risk.
+
+\begin{figure}[h]
+\centering
+\resizebox{0.92\textwidth}{!}{%
+\begin{tikzpicture}[every node/.style={transform shape}]
+  \node[defaultnode] (w) {$W$ age};
+  \node[defaultnode, right=16mm of w] (a) {$A$ exercise};
+  \node[defaultnode, right=16mm of a] (m) {$M$ weight};
+  \node[defaultnode, right=16mm of m] (r) {$R$ blood pressure};
+  \draw[normaledge] (w) -- (a);
+  \draw[normaledge] (a) -- (m);
+  \draw[normaledge] (m) -- (r);
+  \draw[normaledge] (a) to[bend left=45] (r);
+  \draw[normaledge] (w) to[bend right=20] (m);
+  \draw[normaledge] (w) to[bend right=38] (r);
+\end{tikzpicture}}
+\caption{The running example's full causal graph (ECM), reproduced from
+handout \S0: every earlier feature is drawn as a direct cause of every later
+one (age $\to$ exercise, weight, blood pressure; exercise $\to$ weight,
+blood pressure; weight $\to$ blood pressure).}
+\label{fig:ecm-base}
+\end{figure}
+
+\subsection{The PDP, and why it isn't causally valid}
+
+\textbf{PDP} \reusetag{Friedman 2001}: for each $a$, set everyone's exercise
+to $a$, \emph{keep other features as recorded}, average predictions.
+Problem: it silently holds weight and blood pressure fixed --- not what
+would actually happen if someone exercised more. It answers ``what if only
+exercise changed and nothing downstream reacted,'' rarely the causal
+question actually wanted.
+
+\medskip
+\noindent\textbf{Formally} (Molnar's IML book, ch.~19, following
+\reusetag{Friedman 2001}): split all the features the model uses into the
+one(s) being plotted, $x_S$, and everything else, $X_C$ ($S$ and $C$
+partition every feature $f$ takes as input). The partial dependence
+function is
+\begin{equation}
+\hat f_S(x_S) \;=\; \mathbb{E}_{X_C}\big[\hat f(x_S, X_C)\big]
+\;=\; \int \hat f(x_S, X_C)\, dP(X_C).
+\label{eq:pdp-def}
+\end{equation}
+\noindent\textit{In words:} freeze the feature(s) you care about at the
+value $x_S$ you want to plot on the $x$-axis, then average the model's
+prediction over every possible value the \emph{other} features $X_C$ could
+take, weighted by how often that combination actually occurs
+($dP(X_C)$ is the real-world distribution of $X_C$). That gives one number
+for that $x_S$; repeating it across a range of $x_S$ traces out the curve.
+
+\medskip
+\noindent\textbf{Why an integral, not a sum? --- the math one level down.}
+$\mathbb{E}_{X_C}[\cdot]$ always means ``probability-weighted average,'' but
+what that average looks like as a formula depends on whether $X_C$ is
+discrete or continuous.
+
+If $X_C$ could only take finitely many values $c_1,\dots,c_K$ (say, weight
+rounded to the nearest kilogram), the weighted average would be an
+ordinary sum:
+$$\mathbb{E}_{X_C}[\hat f(x_S,X_C)] \;=\; \sum_{k=1}^K \hat f(x_S,c_k)\,
+P(X_C=c_k).$$
+But weight and blood pressure are \emph{continuous} --- they can take any
+real value on a range, so there are infinitely many possible values, and
+the probability of hitting any \emph{one exact} value is $0$ (e.g.\
+$P(\text{weight}=71.3428\ldots\text{kg exactly})=0$; only \emph{intervals}
+of values have positive probability). ``Multiply by $P(X_C=c_k)$ and sum''
+breaks down here --- every term would be $0 \times (\text{something})$.
+
+The fix is the same one ordinary calculus uses to define area under a
+curve. Probability for a continuous variable is described by a
+\textbf{density} $p(x_C)$, where $P(a\le X_C\le b)=\int_a^b p(x_C)\,dx_C$
+(a density is a \emph{rate} --- probability per unit of $x_C$ --- not a
+probability itself, which is why it's allowed to exceed $1$). Chop the
+range of $X_C$ into thin slices of width $\Delta$; on each slice $X_C$ is
+approximately discrete, landing in that slice with probability
+$\approx p(x_C)\Delta$, so the weighted average over all the slices is
+$$\sum_k \hat f(x_S,x_C^{(k)})\, p(x_C^{(k)})\, \Delta
+\;\xrightarrow[\ \Delta\to 0\ ]{}\;
+\int \hat f(x_S,x_C)\, p(x_C)\, dx_C.$$
+That limit --- summing over infinitely many, infinitely thin slices --- is
+exactly what an integral sign \emph{means}. It's the same idea as ``area
+under a curve is the limit of a sum of thin rectangles'' from a first
+calculus course, just with $\hat f(x_S,x_C)\,p(x_C)$ playing the role of
+the curve's height.
+
+\emph{Why $dP(X_C)$ instead of $p(x_C)\,dx_C$?} Writing $dP(X_C)$ is a
+deliberate generalization: it means ``weighted by however probability is
+actually spread out,'' without committing to whether $X_C$ is discrete,
+continuous, or a mix. When $X_C$ is continuous, $dP(X_C) = p(x_C)\,dx_C$;
+when it's discrete, $\int(\cdot)\,dP(X_C)$ collapses back into the ordinary
+sum $\sum_k(\cdot)\,P(X_C{=}c_k)$ above --- one symbol covers both cases,
+which is why $P(dw)$ in the notation table (\S\ref{sec:notation}) got the
+same ``integrate or sum, whichever applies'' description.
+
+\textbf{Where did $p(x_C^{(k)})\,\Delta$ go in the Monte Carlo sum below?}
+Eq.~\eqref{eq:pdp-mc} is $\frac1n\sum_i \hat f(x_S,x_C^{(i)})$ --- no density,
+no $\Delta$, every row weighted equally by $1/n$. That's not a different
+formula from the slice-sum above; the density weight is still there, just
+hidden inside \emph{which points you're summing over}. Here's the
+derivation, one step at a time.
+
+\begin{enumerate}
+  \item Go back to the fixed grid of slices from before, spaced $\Delta$
+    apart, with representative points $x_C^{(1)},x_C^{(2)},\dots$ --- these
+    are evenly-spaced, chosen \emph{by you}, regardless of where real data
+    lives. That's why each one needed an explicit
+    $p(x_C^{(k)})\,\Delta$ multiplier: a grid point in a crowded region of
+    the population and a grid point in a near-empty region get exactly one
+    term each on the same grid, so probability has to be bolted on by hand
+    to tell them apart.
+  \item Now overlay your actual dataset on that same grid. Let $N_k$ be the
+    number of your $n$ rows whose $x_C^{(i)}$ lands in slice $k$. Group the
+    raw (unweighted) sum by which slice each row falls into --- $\hat f$
+    barely changes across one thin slice, so every row in slice $k$
+    contributes almost the same value, $\hat f(x_S,x_C^{(k)})$:
+    $$\sum_{i=1}^n \hat f(x_S,x_C^{(i)}) \;\approx\;
+    \sum_k N_k\,\hat f(x_S,x_C^{(k)}).$$
+  \item Divide both sides by $n$:
+    $$\frac1n\sum_{i=1}^n \hat f(x_S,x_C^{(i)}) \;\approx\;
+    \sum_k \underbrace{\frac{N_k}{n}}_{\text{share of your data in slice }k}
+    \hat f(x_S,x_C^{(k)}).$$
+  \item This is the step that answers the question. $N_k/n$ is the
+    \emph{empirical} fraction of your dataset that happens to land in
+    slice $k$. If your dataset rows are a representative sample of the
+    population (each one drawn from the true distribution of $X_C$), the
+    Law of Large Numbers says that fraction converges, as $n$ grows, to the
+    slice's \emph{true} probability --- which is exactly what a density
+    means:
+    $$\frac{N_k}{n} \;\xrightarrow[n\to\infty]{}\; P(X_C\in\text{slice }k)
+    \;\approx\; p(x_C^{(k)})\,\Delta.$$
+\end{enumerate}
+So $p(x_C^{(k)})\,\Delta$ didn't disappear --- it's sitting inside $N_k/n$.
+A crowded region of the population (high $p$) automatically contributes
+\emph{many} rows to your dataset, so it automatically gets many terms in
+the plain, unweighted sum; a rare region contributes few rows and few
+terms. The multiplying-by-density step and the counting-more-rows-there
+step are doing the identical job --- multiplying explicitly \emph{and}
+sampling proportionally to density would double-count the same weighting.
+Concretely: 10 people in your data with weight $\approx 70$kg contribute
+10 near-identical terms to the raw average, automatically giving that
+weight bracket $10\times$ the say of a bracket only 1 person has ---
+that \emph{is} the density weighting, just paid for in row-count instead
+of in an explicit multiplier. (This relies on the dataset actually being
+representative of the population you want the curve to describe --- the
+same ``which reference population'' issue flagged in \S\ref{sec:scope}.)
+
+Putting the two limits together --- $\Delta\to 0$ (arbitrarily fine
+slices) and $n\to\infty$ (arbitrarily large data) --- turns the slice-sum
+into the exact integral, which is why Eq.~\eqref{eq:pdp-mc} is called an
+\emph{estimator of} Eq.~\eqref{eq:pdp-def} rather than a separate
+definition: same target, approached by letting real data stand in for the
+unknown true distribution.
+
+You can't literally integrate over the true, unknown distribution of
+$X_C$, so in practice $\hat f_S$ is estimated by \textbf{Monte Carlo
+averaging} over the dataset you actually have:
+\begin{equation}
+\hat f_S(x_S) \;=\; \frac{1}{n}\sum_{i=1}^n \hat f\big(x_S,\, x_C^{(i)}\big).
+\label{eq:pdp-mc}
+\end{equation}
+\noindent\textit{In words:} go through every row $i$ in your dataset, one
+at a time. For each row, swap in the fixed value $x_S$ for the feature(s)
+you're plotting, but keep that \emph{same row's own, real, observed}
+values for every other feature ($x_C^{(i)}$ --- the ``$(i)$'' means ``as
+recorded for individual $i$,'' not a made-up value). Run the model once
+per row under this swap, then average all $n$ of the resulting
+predictions. ``Monte Carlo'' here just means: instead of doing the exact
+integral in Eq.~\eqref{eq:pdp-def} (impossible, since you don't know the
+true distribution $P(X_C)$), approximate it by an average over samples you
+actually have --- your dataset itself stands in for that unknown
+distribution, and the approximation gets better the more rows you average
+over.
+
+This is exactly the same computation as averaging every individual's ICE
+(individual conditional expectation) curve at that $x_S$ --- a PDP curve
+\emph{is}, by construction, the pointwise mean of all the ICE curves in
+the dataset. And it's precisely the operation already described above in
+words (``set everyone's exercise to $a$, keep other features as
+recorded, average predictions''): Eq.~\eqref{eq:pdp-mc} is that sentence
+written as a formula, with $S=\{A\}$ (exercise) and $C=\{M,R\}$ (weight,
+blood pressure) in the running example.
+
+\medskip
+\noindent\textbf{A fully worked example, with numbers.} Suppose the
+dataset has just $n=5$ people (a toy size, purely so every row can be
+written out by hand), and a toy model
+$$\hat f(A,M,R) \;=\; 100 - 2A + 0.3M + 0.4R$$
+predicting a cardiovascular risk score from (exercise hrs/week $A$,
+weight kg $M$, blood pressure $R$) --- a made-up linear formula, invented
+only so the arithmetic below is checkable by hand; a real $\hat f$ would
+be some fitted ML model with no such closed form.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$i$ & $A_i$ (real) & $M_i$ (real) & $R_i$ (real) \\
+\midrule
+1 & 2 & 70 & 120 \\
+2 & 5 & 65 & 110 \\
+3 & 0 & 90 & 140 \\
+4 & 3 & 75 & 125 \\
+5 & 1 & 85 & 135 \\
+\bottomrule
+\end{tabular}
+\caption{Toy dataset, $n=5$ people, each with their own recorded
+$(A_i,M_i,R_i)$.}
+\label{tab:pdp-toy}
+\end{table}
+
+To compute $\hat f_S(5)$ --- ``what would average predicted risk be if
+\emph{everyone} exercised 5 hrs/week'' --- Eq.~\eqref{eq:pdp-mc} says: take
+each row in Table~\ref{tab:pdp-toy}, replace $A_i$ with the fixed value
+$5$, keep that same row's own $M_i,R_i$ completely untouched, run
+$\hat f$, then average all 5 results:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}ccl@{}}
+\toprule
+$i$ & $(x_S,\,x_C^{(i)}) = (5,\ M_i,\ R_i)$ & $\hat f(5,M_i,R_i)$ \\
+\midrule
+1 & $(5,\ 70,\ 120)$ & $100-10+21+48=159.0$ \\
+2 & $(5,\ 65,\ 110)$ & $100-10+19.5+44=153.5$ \\
+3 & $(5,\ 90,\ 140)$ & $100-10+27+56=173.0$ \\
+4 & $(5,\ 75,\ 125)$ & $100-10+22.5+50=162.5$ \\
+5 & $(5,\ 85,\ 135)$ & $100-10+25.5+54=169.5$ \\
+\bottomrule
+\end{tabular}
+\caption{The 5 terms actually being averaged in Eq.~\eqref{eq:pdp-mc} at
+$x_S=5$. Column 1 (exercise) is the same fixed $5$ in every row --- the
+``freeze $x_S$'' part. Weight and blood pressure differ row by row ---
+each person's own, untouched $x_C^{(i)}$.}
+\label{tab:pdp-toy-eval}
+\end{table}
+
+$$\hat f_S(5) \;=\; \frac{159.0+153.5+173.0+162.5+169.5}{5}
+\;=\; \frac{817.5}{5} \;=\; 163.5.$$
+
+\noindent\textit{In words:} we are averaging over \textbf{5 numbers, one
+per person in the dataset} --- not over 5 possible values of exercise, and
+not over some abstract population. Person 3, who in reality never
+exercises at all ($A_3=0$, Table~\ref{tab:pdp-toy}), still contributes a
+term to this average: their \emph{predicted risk in a pretend world where
+they exercised 5 hrs/week but kept their actual weight and blood
+pressure} (173.0 --- the single highest of the five, driven entirely by
+their real $M_3=90,R_3=140$, since $A$ is fixed at $5$ for every row
+here, exercise contributes nothing to the differences between rows).
+Repeating the same 5 rows with $x_S=0$ instead of $5$ gives
+$\hat f_S(0)=173.5$ instead --- a different final number, because only
+column 1 changed while the 5 real $(M_i,R_i)$ pairs stayed exactly the
+same. That's the entire mechanism behind \emph{one point} of the PDP
+curve; repeating this 5-row average once per value of $a$ traces out the
+whole curve.
+
+\textbf{The independence assumption, made concrete.} Eq.~\eqref{eq:pdp-mc}
+pairs the fixed $x_S=a$ with \emph{every} row's own $x_C^{(i)}$, including
+rows whose real exercise level was nothing like $a$. That's fine only if
+exercise and (weight, blood pressure) are unrelated --- but they aren't
+(that's the whole running example). Concretely, in
+Table~\ref{tab:pdp-toy-eval}: Person 3 really never exercises
+($A_3=0$) and really carries a high weight/BP profile ($M_3=90,R_3=140$)
+--- plausibly \emph{because} they don't exercise. Eq.~\eqref{eq:pdp-mc}
+still uses their $(M_3,R_3)$ as a stand-in for ``someone who exercises 5
+hrs/week,'' as if that weight/BP combination were a realistic thing to see
+at high exercise, when in this population it may never actually occur
+there.
+This is the same mechanism as the confounding problem in
+\S\ref{sec:background} --- it's why the PDP ``isn't causally valid'' named
+in this subsection's title, and it's exactly what the CDP framework below
+is built to fix.
+
+\bigskip
+\noindent\textbf{Aside: PDP-based feature importance}
+\reusetag{Greenwell, Boehmke \& McCarthy 2018}. Not part of the CDP
+framework itself, but built directly on the PDP curve just defined, and
+worth having on hand since ``does this curve actually vary, or is it
+flat?'' is a question that comes back repeatedly later.
+
+\emph{The idea in one sentence:} a flat PDP curve means the feature barely
+changes the prediction (not important); a curve that swings up and down a
+lot means the feature matters a lot (important). Feature importance turns
+``how much does the curve vary'' into a single number.
+
+\textbf{Numerical features.} Evaluate the PDP curve $\hat f_S$ at its $K$
+\emph{unique observed values} $x_S^{(1)},\dots,x_S^{(K)}$ (literally every
+distinct value the feature actually takes in the dataset, not an
+arbitrary grid), then measure how spread out those $K$ curve heights are
+around their own average:
+\begin{equation}
+I(x_S) \;=\; \frac{1}{K-1}\sum_{k=1}^K
+\left(\hat f_S\big(x_S^{(k)}\big) - \frac{1}{K}\sum_{k=1}^K
+\hat f_S\big(x_S^{(k)}\big)\right)^{\!2}.
+\label{eq:pdp-importance-numeric}
+\end{equation}
+\noindent\textit{In words:} the inner term
+$\frac1K\sum_k \hat f_S(x_S^{(k)})$ is just the \emph{average height} of
+the curve across its $K$ points --- the flat reference line you'd see if
+the feature had zero effect. For each point, subtract that average and
+square the result: a point on a flat curve sits close to the average, so
+this is close to $0$; a point far from the average (the curve is
+swinging there) gives a large squared number. Add up all $K$ squared
+deviations and divide by $K-1$. This is nothing more exotic than the
+ordinary \textbf{sample variance formula}
+($s^2=\frac1{n-1}\sum(y_i-\bar y)^2$, same $K-1$ denominator for the same
+reason) applied to the $K$ curve heights instead of $K$ raw data points
+--- ``importance'' here literally \emph{means} ``variance of the PDP
+curve.''
+
+\emph{Worked example, continuing the toy dataset above.} Since
+$\hat f_S(a) = 100-2a+73.5 = 173.5-2a$ in the running toy (the average of
+$0.3M_i+0.4R_i$ over the 5 people works out to $73.5$), the $K=5$ unique
+real exercise values $\{0,1,2,3,5\}$ give curve heights
+$\{173.5,\,171.5,\,169.5,\,167.5,\,163.5\}$, averaging to $169.1$. Squared
+deviations: $4.4^2,2.4^2,0.4^2,(-1.6)^2,(-5.6)^2 =
+19.36,\,5.76,\,0.16,\,2.56,\,31.36$, summing to $59.2$. So
+$I(A) = 59.2/4 = 14.8$. If exercise instead had \emph{no} effect on
+$\hat f$ at all, all 5 curve heights would be identical, every squared
+deviation would be $0$, and $I(A)$ would come out exactly $0$ --- that's
+the whole point of the measure.
+
+\textbf{Categorical features.} Categories don't sit on a number line, so
+``deviation from the mean'' isn't quite the natural notion; a cruder,
+more robust measure is used instead --- the \textbf{range rule}:
+\begin{equation}
+I(X_S) \;=\; \frac{\max_k\big(\hat f_S(x_S^{(k)})\big)
+- \min_k\big(\hat f_S(x_S^{(k)})\big)}{4}.
+\label{eq:pdp-importance-categorical}
+\end{equation}
+\noindent\textit{In words:} take the PDP's highest value across the $K$
+categories, subtract its lowest value, divide by $4$. \emph{Why divide by
+$4$?} A rule of thumb borrowed from the normal distribution: about $95\%$
+of a normal distribution's mass sits within $\pm 2$ standard deviations of
+its mean --- a band $4$ standard deviations wide. So if all you know is a
+variable's range (max$-$min) and want a rough guess at its standard
+deviation, range$/4$ is a reasonable back-of-envelope estimate
+($\text{range}\approx 4\sigma \Rightarrow \sigma\approx
+\text{range}/4$). It's deliberately crude and typically
+\emph{underestimates} the true spread --- but with only a handful of
+categories ($K$ small), there's little basis for a real variance estimate
+anyway, which is exactly why the cruder range-based version replaces
+Eq.~\eqref{eq:pdp-importance-numeric} here.
+
+\emph{Worked example (toy, illustrative numbers, following Molnar's own
+season/bike-rental example):} PDP-predicted bike rentals by season,
+Spring$=150$, Summer$=180$, Fall$=165$, Winter$=90$. Range
+$=180-90=90$, so $I(\text{season}) = 90/4 = 22.5$.
+
+\textbf{Two things this measure is \emph{not}.} (1) It only sees the
+feature's \emph{main effect} --- the shape of its own PDP curve --- and
+is blind to \emph{interactions}: a feature that matters only by
+interacting with another feature (e.g.\ flipping sign depending on a
+second feature's value, the heterogeneous-effects problem from the
+recall questions above) can have a nearly flat, low-$I$ PDP curve while
+still being genuinely important to the model --- permutation feature
+importance would catch that; this measure would miss it. (2) It weights
+every \emph{unique value} equally, regardless of how many rows share it
+--- a value only one person in the dataset has counts exactly as much as
+a value shared by hundreds, unlike the PDP curve itself
+(Eq.~\eqref{eq:pdp-mc}), which already weights by how common a value's
+neighborhood is via the Monte Carlo average.
+
+\subsection{The fix: use the ECM to define ``changing \texorpdfstring{$A$}{A}''}
+
+\textbf{ECM} = ``explanatory causal model'' --- the analyst's DAG over the
+\emph{features}. It is an assumption brought to the explanation, not a claim
+verified by the model. Given an ECM, there is more than one way to ask ``how
+does output depend on $A$'' --- there are (at least) four, depending on
+whether downstream features are allowed to respond:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}p{2.6cm}p{5.2cm}p{5.6cm}@{}}
+\toprule
+\textbf{Plot} & \textbf{Question} & \textbf{In the running example} \\
+\midrule
+TDP (total) & set $A=a$; let everything downstream respond &
+  weight and BP move \\
+NDDP (natural direct) & set $A=a$; hold downstream features at their
+  \emph{natural} values & \textbf{this is exactly the PDP} (handout's
+  Thm.\ 2.10) \\
+NIDP (natural indirect) & keep your own $A$; move downstream features to
+  where they'd be under $A=a$ & your exercise, but the weight/BP you'd have
+  at exercise $a$ \\
+PCDP (partially controlled) & set $A=a$ \emph{and} fix another feature &
+  exercise $=a$, weight $=m$ \\
+\bottomrule
+\end{tabular}
+\caption{The four named dependence plots.}
+\label{tab:four-plots}
+\end{table}
+
+The genuinely new fact worth internalizing early: $\mathbf{NDDP = PDP}$. The
+plot everyone already uses is a special case of this framework --- the
+``direct effect only'' member of the family, not a separate method.
+
+\subsection{Constructed outcome --- the trick that makes this identifiable}
+
+Treat the model's output as a variable: $Y^* = f(X)$. Then the
+\textbf{average TDP is a plain back-door adjustment}:
+\begin{equation}
+  \theta(a) \;=\; E[f(X) \mid \operatorname{do}(A=a)]
+  \;=\; E_W\big[\, E[Y^* \mid A=a, W] \,\big], \qquad W = \text{parents of } A.
+  \label{eq:tdp-backdoor}
+\end{equation}
+\emph{In words:} the average model output you'd get from forcing everyone
+to exercise level $a$ ($\theta(a)$, left-hand side) equals a two-step
+average on the right: first, within each age group $w$, average the
+model's prediction over the people who actually exercise at level $a$
+(inner $E[Y^*\mid A=a,W]$); then average those age-group numbers together
+using the real population mix of ages ($E_W[\cdot]$) --- the same
+``average over the marginal, not the conditional'' move as
+Eq.~\ref{eq:backdoor}, now applied to the model's output instead of a raw
+outcome.
+\reusetag{Pearl 2009, Thm.\ 3.2.2; Zhao \& Hastie 2021 (theorem)}; \newtag~is
+what this implies specifically for CDPs. The equations for weight and blood
+pressure are never needed: $\operatorname{do}(A=a)$ leaves the parents'
+distribution alone and leaves every downstream conditional given $(a,w)$
+alone. This is \emph{why} \S\ref{sec:identification} can get away with only
+needing the parents plus a ``reduced form,'' not the full fitted ECM.
+
+\subsection{The picture that organizes the whole family}
+
+\reusetag{Shpitser \& Tchetgen Tchetgen 2016} Add the model's output $\hat Y$
+to the graph as a child of every feature. Then TDP/PCDP are ordinary node
+interventions ($\operatorname{do}(A=a)$, $\operatorname{do}(A=a,C=c)$), while
+NDDP/NIDP are \textbf{edge} interventions (set $a$ on the arrow into $\hat
+Y$ only, vs.\ on the arrows into the child features only). Normally, one
+node ``acting two ways at once'' needs cross-world assumptions data cannot
+check --- but here $\hat Y = f(X)$ is a \emph{known function}, so nothing
+cross-world is actually invoked. That is the structural reason NDDP reduces
+to an ordinary average (the PDP) and NIDP reduces to an ordinary
+single-world quantity (\S\ref{sec:identification}).
+
+\begin{figure}[htbp]
+\centering
+\begin{subfigure}[t]{0.47\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.62, every node/.style={transform shape}]
+  \node[defaultnode] (w) at (0,1.6) {$W$};
+  \node[accentnode] (a) at (2.4,1.6) {$A{=}a$};
+  \node[respondnode] (m) at (4.8,1.6) {$M$};
+  \node[respondnode] (r) at (7.2,1.6) {$R$};
+  \node[targetnode] (y) at (3.6,-0.8) {$\hat Y$};
+  \draw[severededge] (w) -- (a);
+  \draw[normaledge] (a) -- (m);
+  \draw[normaledge] (m) -- (r);
+  \draw[normaledge] (a) -- (y);
+  \draw[normaledge] (m) -- (y);
+  \draw[normaledge] (r) -- (y);
+\end{tikzpicture}
+\caption{TDP --- total: \texttt{do(A=a)} cuts the arrow into $A$; $M$ and $R$
+respond through the normal mechanism; everything reaches $\hat Y$.}
+\label{fig:tdp}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.47\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.62, every node/.style={transform shape}]
+  \node[defaultnode] (w) at (0,1.6) {$W$};
+  \node[accentnode] (a) at (2.4,1.6) {$A$};
+  \node[naturalnode] (m) at (4.8,1.6) {$M$};
+  \node[naturalnode] (r) at (7.2,1.6) {$R$};
+  \node[targetnode] (y) at (3.6,-0.8) {$\hat Y$};
+  \draw[normaledge] (w) -- (a);
+  \draw[severededge] (a) -- (m) node[midway, above, font=\tiny, text=black!55] {obs.\ $A$};
+  \draw[normaledge] (m) -- (r);
+  \draw[accentedge] (a) -- (y) node[midway, left, font=\tiny, text=accentc] {$a$};
+  \draw[normaledge] (m) -- (y);
+  \draw[normaledge] (r) -- (y);
+\end{tikzpicture}
+\caption{NDDP $=$ PDP --- natural direct: only the arrow into $\hat Y$
+carries $a$; $M$ and $R$ are left at their natural (recorded) values.}
+\label{fig:nddp}
+\end{subfigure}
+
+\medskip
+
+\begin{subfigure}[t]{0.47\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.62, every node/.style={transform shape}]
+  \node[defaultnode] (w) at (0,1.6) {$W$};
+  \node[accentnode] (a) at (2.4,1.6) {$A$};
+  \node[respondnode] (m) at (4.8,1.6) {$M$};
+  \node[respondnode] (r) at (7.2,1.6) {$R$};
+  \node[targetnode] (y) at (3.6,-0.8) {$\hat Y$};
+  \draw[normaledge] (w) -- (a);
+  \draw[accentedge] (a) -- (m) node[midway, above, font=\tiny, text=accentc] {$a$};
+  \draw[normaledge] (m) -- (r);
+  \draw[severededge] (a) -- (y) node[midway, left, font=\tiny, text=black!55] {obs.\ $A$};
+  \draw[normaledge] (m) -- (y);
+  \draw[normaledge] (r) -- (y);
+\end{tikzpicture}
+\caption{NIDP --- natural indirect: the arrow into $M$ carries $a$ (so $M,R$
+move to their counterfactual values); the direct arrow into $\hat Y$ keeps
+the observed $A$. Identified as Fulcher et al.'s ``bridge mean.''}
+\label{fig:nidp}
+\end{subfigure}
+\hfill
+\begin{subfigure}[t]{0.47\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.62, every node/.style={transform shape}]
+  \node[defaultnode] (w) at (0,1.6) {$W$};
+  \node[accentnode] (a) at (2.4,1.6) {$A{=}a$};
+  \node[accentnode] (m) at (4.8,1.6) {$M{=}m$};
+  \node[respondnode] (r) at (7.2,1.6) {$R$};
+  \node[targetnode] (y) at (3.6,-0.8) {$\hat Y$};
+  \draw[severededge] (w) -- (a);
+  \draw[severededge] (a) -- (m);
+  \draw[normaledge] (m) -- (r);
+  \draw[normaledge] (a) -- (y);
+  \draw[normaledge] (m) -- (y);
+  \draw[normaledge] (r) -- (y);
+\end{tikzpicture}
+\caption{PCDP --- partially controlled: \texttt{do(A=a,M=m)} cuts both
+incoming arrows; $R$ still responds to the fixed $M$; both $a$ and $m$ reach
+$\hat Y$.}
+\label{fig:pcdp}
+\end{subfigure}
+\caption{The four dependence plots as different interventions on the same
+explanatory causal model. \emph{Simplified for legibility}: the full ECM
+(Figure~\ref{fig:ecm-base}, handout \S0) also has direct edges $W\to M$,
+$W \to R$, $A \to R$ among the features, and --- since $\hat Y$ is a child
+of every feature --- a direct $W \to \hat Y$ edge; all four are omitted here
+so the direct/indirect mechanism stays readable. Blue $=$ set to the
+counterfactual value; amber $=$ responds/recomputed; gray $=$ kept at its
+natural (recorded) value; dashed $=$ edge severed, or carrying the natural
+value instead of $a$.}
+\label{fig:four-plots}
+\end{figure}
+
+\noindent\textbf{Legend:}
+\begin{itemize}[leftmargin=1.6em, itemsep=2pt]
+  \item[\textcolor{accentc}{$\bullet$}] set to the counterfactual value
+  \item[\textcolor{respondc}{$\bullet$}] responds / recomputed
+  \item[\textcolor{naturalc}{$\bullet$}] kept at natural (recorded) value
+  \item[-----] active edge (solid)
+  \item[- - -] severed edge, or an edge carrying the natural value instead
+    of $a$
+\end{itemize}
+
+\begin{quote}
+\textbf{Direct + indirect $\neq$ total.} \newtag, modest.
+\[
+  \theta(a) - B \;=\; [\mathrm{NDDP}(a) - B] + [\mathrm{NIDP}(a) - B] + J(a),
+\]
+\emph{In words:} take how far the total curve is from the overall average
+prediction ($\theta(a) - B$, left side). You might expect that gap to split
+cleanly into ``how much of it is the direct effect'' plus ``how much of it
+is the indirect effect'' (the two bracketed terms on the right). It doesn't,
+in general --- there's a leftover piece $J(a)$ that has to be added to make
+the two sides match, and $J(a)$ is exactly zero only in the special case
+where $f$ treats $A$ and the downstream features additively (no
+interaction between them).
+
+Here $B$ is the average prediction and $J$ is an interaction remainder that
+vanishes only when $f$ is additive in $A$ and the downstream features. Toy
+counterexample: $A \sim \mathrm{Bern}(p)$, $R(a) = a$, $f = a \cdot r$; the
+total contrast is $1$, but the direct and indirect contrasts are each only
+$p$. \textbf{Don't assume direct $+$ indirect sums to total} --- $J$ should
+be plotted alongside them, not ignored.
+\end{quote}
+
+\begin{openquestions}
+  \item Work through why exactly the parents' distribution is untouched by
+    $\operatorname{do}(A=a)$ --- is this just the definition of ``parents,''
+    or does it need the ECM to have no unmeasured confounding among
+    features?
+  \item Read arXiv \S1--2 in full (the mentor's prescribed order has this
+    \emph{before} rereading the handout) for the paper's own formal
+    definitions, then compare notation to the handout's.
+\end{openquestions}

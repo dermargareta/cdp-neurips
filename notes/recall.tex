@@ -1,0 +1,366 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{parskip}
+\usepackage{hyperref}
+
+\definecolor{accentc}{HTML}{2A4FC7}
+\hypersetup{colorlinks=true, linkcolor=accentc, urlcolor=accentc,
+  pdftitle={CDP Active Recall}, pdfauthor={RAI}}
+
+\newcommand{\qa}[2]{\par\noindent\textbf{#1.} #2\par\smallskip}
+
+\title{Active Recall --- Causal Dependence Plots}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\paragraph{How to use this.} This is a separate, standalone file from
+\texttt{main.tex} on purpose --- \texttt{main.tex} is the reference to
+consult, this one is for testing yourself \emph{without} the reference in
+front of you. For each question: cover the Answers section (a ruler, a
+folded page, or just don't scroll there), say or write your answer from
+memory, \emph{then} check. Getting one wrong is the useful part, not a
+failure --- it tells you exactly which page of \texttt{main.pdf} to reread.
+Revisit questions you missed sooner than ones you got right (that's the
+whole idea behind spaced repetition). Rebuild with
+\texttt{latexmk -pdf recall.tex} after adding questions of your own ---
+and you should add your own as you keep reading; this seed set stops at
+what's in the notes as of today.
+
+\tableofcontents
+
+\section*{Questions}
+\addcontentsline{toc}{section}{Questions}
+
+\subsection*{Notation \& background}
+\qa{1}{What does $\operatorname{do}(A=a)$ mean, and how is it different
+  from conditioning on $A=a$?}
+\qa{2}{Graphically, what does $\operatorname{do}(A=a)$ do to the DAG?}
+\qa{3}{In one sentence, what is confounding?}
+\qa{4}{In the running example, name the two separate effects age has that
+  together create confounding between exercise and blood pressure.}
+\qa{5}{What are the two conditions a covariate set $W$ must satisfy to be
+  ``valid for adjustment''?}
+\qa{6}{What can go wrong if you adjust for a variable that's a descendant
+  of $A$? Give both failure modes.}
+\qa{7}{What can go wrong if a backdoor path is left unblocked by your
+  chosen adjustment set?}
+\qa{8}{Why does the set of \emph{all parents} of $A$ always satisfy the
+  backdoor criterion, with no case-by-case graph analysis needed?}
+\qa{9}{True or false: if two covariate sets are both valid for adjustment,
+  they must give equally precise (equal-variance) estimates.}
+\qa{10}{In the backdoor adjustment formula, why do we average using
+  $P(W{=}w)$ (the marginal distribution) instead of $P(W{=}w\mid A{=}a)$?}
+\qa{11}{Potential-outcomes language needs three assumptions. Name them, and
+  say which one is ``the backdoor criterion, in different words.''}
+\qa{12}{What is a ``non-descendant'' of $A$, and which later result cares
+  about \emph{all} non-descendants specifically (not just the parents)?}
+
+\subsection*{The big picture}
+\qa{13}{What does the classic PDP silently assume about the other features
+  when one feature is varied?}
+\qa{14}{Name all four named dependence plots and, in one phrase each, what
+  each one does to downstream features.}
+\qa{15}{Which one of the four plots is mathematically identical to the
+  classic PDP?}
+\qa{16}{What is the ``constructed outcome'' $Y^*$, and why is treating the
+  model's output this way useful?}
+\qa{17}{In the extended-graph picture ($\hat Y$ added as a child of every
+  feature), which two plots are node interventions, and which two are edge
+  interventions?}
+\qa{18}{Why don't NDDP/NIDP need cross-world assumptions, even though
+  they're edge interventions on a node that's ``acting two ways at once''?}
+\qa{19}{Does direct $+$ indirect always sum to total? Name the leftover
+  term and say when it vanishes.}
+
+\subsection*{Identification}
+\qa{20}{What is the ``reduced form'' $Q(dr\mid a,w)$, and why does it
+  matter that it's learnable from data without any structural equations?}
+\qa{21}{Which three of the four plots need only the parents of $A$ plus the
+  reduced form? Which one needs more, and what does it need instead?}
+\qa{22}{What object from the mediation-analysis literature does the NIDP
+  turn out to equal exactly?}
+\qa{23}{For this term's paper, is the NIDP handled for continuous $A$ or
+  discrete $A$ only?}
+
+\subsection*{Estimation}
+\qa{24}{Name the three classical estimators for one discrete level of $A$,
+  and say which one is ``doubly robust.''}
+\qa{25}{In the AIPW formula, what happens to a person's correction term if
+  their actual $A_i \neq a$?}
+\qa{26}{What does ``doubly robust'' mean, precisely --- right if which
+  condition(s) hold?}
+\qa{27}{What does cross-fitting let you do, and what does it \emph{not} do
+  (``not magic'')?}
+\qa{28}{Between the parents of $A$ and all non-descendants of $A$, which is
+  guaranteed never to be less efficient in large samples (assuming $f$ uses
+  every feature)?}
+\qa{29}{Why doesn't adjusting for a larger covariate set make the
+  \emph{population} positivity condition harder, even though it makes
+  estimation harder in finite samples?}
+
+\subsection*{Continuous \texorpdfstring{$A$}{A}}
+\qa{30}{Why is the bin weight $g_k$ chosen \emph{in advance} instead of
+  using the observed distribution of $A$ inside the bin?}
+\qa{31}{What goes wrong with naive confidence bands around a smoothed curve
+  $\theta_h$, and what's the fix?}
+\qa{32}{Why can a smooth-curve estimator's assumptions fail for a model $f$
+  that's a tree splitting on $A$?}
+
+\subsection*{Propagation vs.\ sensitivity}
+\qa{33}{Does a downstream confounder (one not involving $A$) invalidate the
+  parent-adjustment formula for the \emph{total} curve? Why or why not?}
+\qa{34}{Name one advantage propagation can have over adjustment when the
+  ECM's parametric equations are correct.}
+\qa{35}{Can an unmeasured confounder change the \emph{level} of the curve
+  in a way sensitivity analysis needs to worry about? Why does the analysis
+  focus on the slope instead?}
+
+\subsection*{Practical rules \& scope}
+\qa{36}{Why must explanatory curves be drawn on data $f$ never trained on?}
+\qa{37}{Why does ``the reference population'' matter? Name two different
+  populations a curve could be averaged over that would give different
+  answers.}
+\qa{38}{Name two things this term's paper explicitly does \emph{not}
+  claim.}
+
+\subsection*{Molnar's PDP chapter (IML book, ch.\ 19)}
+\qa{39}{Write the partial dependence function $\hat f_S(x_S)$ as an
+  expectation. What is being averaged over, and what is held fixed?}
+\qa{40}{Give the Monte-Carlo estimator actually used in practice. Are the
+  $x_C^{(i)}$ values in that formula made up, or are they real rows from the
+  dataset?}
+\qa{41}{In one sentence, how does a PDP curve relate to a bundle of ICE
+  (individual conditional expectation) curves?}
+\qa{42}{What is the ``independence assumption'' underlying a PDP, and why is
+  it called the biggest limitation of the method?}
+\qa{43}{Molnar's height/weight example: computing the PDP at height
+  $=200$cm means averaging over the marginal distribution of weight. What
+  concrete, unrealistic combination can this produce?}
+\qa{44}{Name the alternative plot built specifically to fix the
+  correlation problem, and in one phrase, what does it condition on instead
+  of marginalizing?}
+\qa{45}{How is the partial dependence value for one category of a
+  categorical feature (e.g.\ ``summer'') computed?}
+\qa{46}{Per Zhao \& Hastie (as Molnar cites them), in what sense is a PDP
+  ``causal,'' and in what sense is it explicitly \emph{not}?}
+\qa{47}{Give the classic PDP-cancellation example: a feature where half the
+  data has a positive association and half has a negative one. What does
+  the PDP curve look like, and what would you wrongly conclude from it?}
+\qa{48}{ICE plots fix the problem in Q47 by showing heterogeneity, but they
+  still can't show you one key thing. What is it?}
+\qa{49}{Why is two features usually the practical ceiling for a PDP, even
+  though higher-order PDPs are mathematically well-defined?}
+\qa{50}{Which one of the four CDP-family plots (\S2, ``The big picture,''
+  in \texttt{main.tex}) turns out to be mathematically identical to the
+  classic PDP? Given your answer to Q42, what is the classic PDP
+  \emph{implicitly} assuming about the rest of the DAG?}
+
+\clearpage
+\section*{Answers}
+\addcontentsline{toc}{section}{Answers}
+
+\subsection*{Notation \& background}
+\qa{1}{$\operatorname{do}(A=a)$ \emph{sets} $A$ to $a$ by intervention ---
+  as if you forced it. Conditioning on $A=a$ just looks at whoever
+  happened to have that value already, which can be contaminated by
+  whatever else predicts $A$.}
+\qa{2}{It deletes every arrow \emph{into} $A$ (its value no longer depends
+  on its natural causes), then lets everything downstream propagate
+  forward as usual.}
+\qa{3}{Confounding is when two things look related only because they share
+  a common cause, not because one causes the other.}
+\qa{4}{Age affects blood pressure directly (aging), and age separately
+  affects how much people exercise --- since it drives both, it creates a
+  spurious link between exercise and blood pressure on top of any real
+  causal link.}
+\qa{5}{(a) It contains no descendant of $A$; (b) it blocks every backdoor
+  path from $A$ to the outcome.}
+\qa{6}{If the descendant is a \emph{mediator} (on the causal path from $A$
+  to the outcome), conditioning on it blocks part of the effect you're
+  trying to measure. If it's a \emph{collider}, conditioning on it can
+  manufacture a spurious association that wasn't there before.}
+\qa{7}{Some confounding is left in the adjusted number --- it will still be
+  biased, just as the naive (unadjusted) comparison was, only possibly by
+  a smaller amount.}
+\qa{8}{Any path into $A$ must pass through one of $A$'s parents
+  immediately before reaching it, so conditioning on all of them blocks
+  every such path automatically --- this follows from the graph structure
+  alone, no extra reasoning needed per graph.}
+\qa{9}{False. Valid means ``gives the correct number''; different valid
+  sets can differ in variance (how precisely that correct number is
+  estimated from finite data) --- that's a separate, ``efficiency''
+  question.}
+\qa{10}{Because $P(W{=}w\mid A{=}a)$ is the age mix \emph{among people who
+  happen to have} $A=a$ --- exactly the thing confounding distorts. Using
+  the marginal $P(W{=}w)$ forces every level of $A$ to be compared against
+  the same, undistorted population mix.}
+\qa{11}{Consistency, ignorability/unconfoundedness, and
+  positivity/overlap. Ignorability ($\{R(a)\}\perp A\mid W$) is the
+  backdoor criterion restated in potential-outcomes language.}
+\qa{12}{Everything that isn't a descendant of $A$ (parents, and anything
+  upstream of or unrelated to $A$). The covariate-selection result
+  (\S4, ``Estimation,'' in \texttt{main.tex}) shows adjusting on
+  \emph{all} non-descendants --- not just the parents --- is never worse
+  for variance, when $f$ uses every feature.}
+
+\subsection*{The big picture}
+\qa{13}{That the other features stay fixed at their recorded values ---
+  i.e.\ that nothing downstream would actually respond if the varied
+  feature really changed.}
+\qa{14}{TDP: let everything downstream respond. NDDP: hold downstream
+  features at natural values. NIDP: keep your own value of $A$, but move
+  downstream features to their counterfactual values. PCDP: set $A=a$ and
+  also fix one specific downstream feature.}
+\qa{15}{NDDP.}
+\qa{16}{$Y^* = f(X)$: the model's own output, treated as if it were an
+  ordinary outcome variable. It's useful because it lets you apply
+  ordinary causal-inference machinery (backdoor adjustment, AIPW, ...) to
+  explaining a model, not just to real-world outcomes.}
+\qa{17}{Node interventions: TDP and PCDP. Edge interventions: NDDP and
+  NIDP.}
+\qa{18}{Because $\hat Y = f(X)$ is a \emph{known, deterministic} function
+  --- the usual cross-world assumptions are needed to handle uncertainty
+  about how a node would behave under two conflicting interventions
+  simultaneously, but there's no such uncertainty when the node's behavior
+  is a known formula.}
+\qa{19}{No --- there's a leftover interaction term $J(a)$ that must be
+  added to make the two sides balance. It vanishes only when $f$ is
+  additive in $A$ and the downstream features (no interaction between
+  them).}
+
+\subsection*{Identification}
+\qa{20}{The conditional law of the non-parent features given $(A,W)$. It
+  matters because it can be estimated directly from data with ordinary
+  regression-style tools --- you never have to fit the ECM's actual
+  structural equations.}
+\qa{21}{TDP, NDDP, and NIDP. PCDP needs more: the graph \emph{inside} the
+  non-parent features $R$ (two different internal graphs consistent with
+  the same data can give different PCDP answers).}
+\qa{22}{The ``bridge mean'' $\Psi(a) = E[Y(A,Z(a))]$ from the
+  population-intervention indirect-effect literature.}
+\qa{23}{Discrete $A$ only --- the continuous-feature version is flagged as
+  needing its own theory, not done this term.}
+
+\subsection*{Estimation}
+\qa{24}{Plain regression (regress $Y^*$ on $(A,Z)$, average); inverse
+  propensity weighting; and AIPW, which combines both and is the doubly
+  robust one.}
+\qa{25}{It's switched off entirely --- the indicator $\mathbf 1(A_i{=}a)$
+  is zero, so that person contributes only their regression guess
+  $\hat\mu(a,Z_i)$, with no correction term.}
+\qa{26}{The estimator is consistent if \emph{either} the outcome regression
+  $\hat\mu$ or the propensity $\hat\pi$ is correctly specified --- it
+  doesn't need both.}
+\qa{27}{It lets you use flexible ML models for the nuisance functions
+  ($\hat\mu,\hat\pi$) while still getting a valid confidence interval. It
+  does \emph{not} remove the underlying accuracy requirement --- the two
+  nuisance errors still need to shrink fast enough (their product must be
+  $o_p(n^{-1/2})$); cross-fitting just removes a technical condition, not
+  that requirement.}
+\qa{28}{All non-descendants of $A$.}
+\qa{29}{Because $P(a\mid\text{non-descendants}) = P(a\mid W)$ by the graph
+  --- the extra variables don't change the population-level propensity at
+  all. What gets harder is purely a finite-sample \emph{fitting} problem
+  (a bigger regression is harder to estimate well), not a population-level
+  identification problem.}
+
+\subsection*{Continuous \texorpdfstring{$A$}{A}}
+\qa{30}{Because weighting by the \emph{observed} distribution of $A$ inside
+  the bin would make the target depend on the data-generating law itself,
+  and would add an extra term to the standard error. A weight fixed in
+  advance keeps the target a clean, regular, $\sqrt n$ quantity.}
+\qa{31}{Any uncorrected smoother has bias about as large as its standard
+  error at its best bandwidth, so naive bands \emph{under-cover} (an
+  earlier prototype got 0.89 coverage instead of $\sim$0.95). Fix:
+  debiasing, deliberate undersmoothing, or reporting bands for the smoothed
+  $\theta_h$ itself rather than pretending they're bands for the
+  unsmoothed $\theta$.}
+\qa{32}{A tree that splits on $A$ can make the true curve $\theta$ itself
+  jumpy/discontinuous in $a$, but the smooth-curve theory assumes $\theta$
+  is actually smooth --- so the assumption the theory needs is violated.}
+
+\subsection*{Propagation vs.\ sensitivity}
+\qa{33}{No --- the parent-adjustment formula for the total curve is still
+  correct whether or not that downstream confounder is drawn in the graph.
+  It changes the data (and so the curve), but adjustment still recovers
+  whatever the right curve is for that data.}
+\qa{34}{If the ECM's equations are right, propagation can be more precise
+  and can extrapolate outside the region where the data actually overlap
+  (as declared model-based extrapolation).}
+\qa{35}{No --- the \emph{level} depends on an arbitrary zero point, so it's
+  not a meaningful target for sensitivity analysis. The analysis instead
+  asks how strong a confounder would need to be to flip the \emph{slope},
+  flatten the curve, or cross a threshold --- things that don't depend on
+  an arbitrary reference point.}
+
+\subsection*{Practical rules \& scope}
+\qa{36}{Because a flexible model can nearly reproduce its own training
+  outcomes (a forest is a classic case) --- evaluating $f$ on rows it
+  trained on isn't a fair sample of what $f$ actually does on new data.}
+\qa{37}{The outer average is over some distribution of $W$, and different
+  populations (e.g.\ the training cohort vs.\ a held-out sample vs.\ a
+  future deployment population) can have different distributions of $W$
+  --- so the curve genuinely differs across them whenever the effect
+  varies with $w$.}
+\qa{38}{Any two of: that parent adjustment/AIPW/cross-fitting/dose-response
+  bands are new ideas; that the method works without a causal model at
+  all; that it's the first semiparametric inference for causal
+  explainability; bands for individual per-person curves.}
+
+\subsection*{Molnar's PDP chapter (IML book, ch.\ 19)}
+\qa{39}{$\hat f_S(x_S) = E_{X_C}[\hat f(x_S, X_C)]$. You average over the
+  distribution of the \emph{other} features $X_C$, while the feature(s) of
+  interest $x_S$ are held fixed at the value you're plotting.}
+\qa{40}{$\hat f_S(x_S) = \frac1n\sum_{i=1}^n \hat f(x_S, x_C^{(i)})$. The
+  $x_C^{(i)}$ are real, observed rows from the dataset --- for each one you
+  swap in the fixed $x_S$ and keep that row's actual other-feature values,
+  then average the model's output across all $n$ rows.}
+\qa{41}{A PDP is the average of all the individual ICE curves in the
+  dataset --- one ICE curve per data point, PDP is their pointwise mean.}
+\qa{42}{It's assumed that the feature(s) in $S$ are uncorrelated with the
+  features in $C$. It's the biggest limitation because real features are
+  usually correlated, and averaging over the marginal (unconditional)
+  distribution of $C$ then mixes in combinations that don't actually occur
+  together.}
+\qa{43}{A person who is 200cm tall but weighs under 50kg --- the PDP at
+  height$=200$ averages over \emph{all} observed weights, including ones
+  that in reality never co-occur with that height.}
+\qa{44}{Accumulated Local Effect (ALE) plots. They average over the
+  \emph{conditional} distribution of $C$ given $S$ (using only nearby,
+  realistic combinations) instead of the marginal distribution of $C$.}
+\qa{45}{Force every instance in the dataset to have that category (e.g.\
+  set every row's season to ``summer''), run the model on all of them, and
+  average the predictions.}
+\qa{46}{It's causal \emph{for the model}: you are literally intervening on
+  a feature and reading off how the model's output responds, which is a
+  genuine causal statement about $\hat f$ as a function. It is \emph{not}
+  necessarily causal for the real world the model was trained to predict.}
+\qa{47}{If one half of the data has a positive slope and the other half an
+  equally strong negative slope, the PDP curve can come out flat (the two
+  halves cancel in the average). You would wrongly conclude the feature has
+  no effect on the prediction, when in fact it has a strong effect that
+  differs in direction across subgroups.}
+\qa{48}{Which \emph{direction} (sign) the effect has for which subgroup ---
+  ICE curves show that the lines fan out (heterogeneity exists) but not, by
+  themselves, which lines belong to ``positive-effect'' people vs.\
+  ``negative-effect'' people, especially when that split depends on yet
+  another feature.}
+\qa{49}{One feature gives a 2D plot and two features a 3D plot, which is
+  about the limit of what a static image (or a human) can read directly.
+  Higher-order PDPs are computable as functions --- there's just no
+  meaningful way left to draw or perceive them.}
+\qa{50}{NDDP (see recall.tex \S``Big picture'' above, Q15). It tells you the
+  classic PDP is implicitly assuming there's no arrow from the varied
+  feature to anything downstream that would actually respond --- i.e.\ it's
+  silently treating the intervention as one where every other feature stays
+  at its natural/recorded value, exactly the NDDP construction, not a full
+  ``let everything respond'' intervention (that would be the TDP).}
+
+\end{document}

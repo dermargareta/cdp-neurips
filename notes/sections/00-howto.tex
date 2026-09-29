@@ -1,0 +1,78 @@
+\section*{How to use these notes}
+\label{sec:howto}
+\addcontentsline{toc}{section}{How to use these notes}
+
+This document is the working knowledge base for the project, kept separate
+from \texttt{docs/} (the mentor's source material, which stays unedited so
+it is always safe to check a note against what was actually handed to us).
+
+\subsection*{Layout}
+
+\begin{description}[leftmargin=2.2em]
+  \item[\texttt{main.tex}] the master file: preamble, macros, TikZ styles,
+    and the \verb|\input| list below.
+  \item[\texttt{sections/}] one file per topic, mirroring the handout's own
+    structure (\texttt{docs/CDP\_explainer\_students.pdf}). Compile order
+    equals reading order.
+  \item[\texttt{recall.tex}] a \emph{separate}, standalone self-quiz document
+    (compiles to its own \texttt{recall.pdf}) --- questions first, answers
+    at the end, for testing yourself \emph{without} this reference open.
+    Add to it as you read further; don't fold it into \texttt{main.tex}.
+\end{description}
+
+Build with \texttt{latexmk -pdf main.tex} (or \texttt{pdflatex} run twice, so
+the table of contents and cross-references settle).
+
+\subsection*{Conventions}
+
+\begin{itemize}
+  \item \textbf{Cross-references}: every section carries a
+    \verb|\label{sec:...}|; refer to it elsewhere with \verb|\ref| or
+    \verb|\hyperref[sec:...]{...}| rather than repeating content.
+  \item \textbf{REUSE vs.\ NEW}: the mentor's handout tags every idea as
+    applying an existing result or contributing a new one. Kept here as the
+    \verb|\reusetag{Source}| / \verb|\newtag| macros (defined in
+    \texttt{main.tex}), rendering as \reusetag{Source} / \newtag. This tag is
+    the organizing device for the whole project --- keep using it.
+  \item \textbf{Cite by section}: when a note is based on the handout,
+    reference its section number (e.g.\ ``handout \S1.3'') so it is easy to
+    jump back to the PDF and check nuance.
+  \item \textbf{Don't edit \texttt{docs/}}: if a note turns out to be wrong
+    once something is understood better, fix the note, not the memory of the
+    PDF --- the PDF is the ground truth handed down from the mentor.
+\end{itemize}
+
+\subsection*{Day to day}
+
+\begin{enumerate}
+  \item When a source is read (paper, handout section), add a dated entry to
+    the reading log (\S\ref{sec:reading-log}) --- even two lines.
+  \item Pull any new term into the glossary (\S\ref{sec:glossary})
+    immediately, before the exact definition used \emph{in this project} is
+    forgotten (causal-inference terms often carry paper-specific
+    conventions).
+  \item When a section grows past its own topic, split it into a new file
+    under \texttt{sections/} and add an \verb|\input| line in
+    \texttt{main.tex} --- but don't pre-create empty sections for material
+    not yet read.
+  \item Anything unresolved goes to the open-questions section
+    (\S\ref{sec:questions}) instead of sitting half-understood inside a
+    content section.
+\end{enumerate}
+
+\subsection*{Starting scaffold}
+
+The content sections were seeded from \texttt{docs/CDP\_explainer\_students.pdf}
+(\S0--\S2) and the CDP paper's introduction (arXiv:2303.04209, \S1 $+$ start
+of \S2.1). They are \textbf{not exhaustive} --- most of the arXiv paper's
+\S2 (\S2.1--2.6, its own careful methodology section, per the mentor's
+prescribed reading order) has not been folded in yet, nor has the Loftus
+``Trustworthy Causal Explanations'' slides (now read, see the reading log)
+or a full pass of the IML PDP chapter. Treat the seeded notes as a skeleton
+to correct and extend while actually reading, not as a finished summary.
+
+\textbf{Mentor's prescribed reading order} (given 2026-09-19, see the
+reading log): (1) Molnar's PDP chapter; (2) the CDP paper,
+arXiv:2303.04209, \S1--2 carefully, skim the rest; (3) this project
+explainer, \texttt{docs/CDP\_explainer\_students.pdf}. Follow that order,
+not whatever order these notes happen to be organized in.

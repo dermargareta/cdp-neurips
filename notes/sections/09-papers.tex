@@ -1,0 +1,70 @@
+\section{Bibliography / reuse tracker}
+\label{sec:papers}
+
+One row per paper the handout cites. \emph{Role} is what it is REUSEd for in
+\emph{this} project. \emph{Read?} should be updated honestly as each is
+actually worked through --- don't mark done from the handout's summary
+alone.
+
+\begin{longtable}{@{}p{3.6cm}p{5.6cm}p{2.1cm}p{1.4cm}@{}}
+\toprule
+\textbf{Paper} & \textbf{Role in this project} & \textbf{Used in} &
+\textbf{Read?} \\
+\midrule
+\endhead
+Loftus, Bynum \& Hansen --- ``Causal Dependence Plots'' (arXiv:2303.04209) &
+  \textbf{The source paper.} Defines TDP/NDDP/NIDP/PCDP, does full
+  parametric propagation, no sampling-based bands & \S\ref{sec:bigpicture} &
+  intro + \S1--2.1 only \\
+Friedman (2001) & Original PDP & \S\ref{sec:bigpicture} & no (via Molnar's
+  IML chapter instead --- \texttt{docs/IML/}) \\
+Pearl (2009), Thm.\ 3.2.2 & Back-door adjustment theorem, applied to
+  $Y^*=f(X)$ & \S\ref{sec:bigpicture} & no \\
+Zhao \& Hastie (2021) & Supports the back-door-for-$Y^*$ argument &
+  \S\ref{sec:bigpicture} & no \\
+Shpitser \& Tchetgen Tchetgen (2016) & Edge interventions / the
+  $\hat Y$-augmented-graph picture & \S\ref{sec:bigpicture} & no \\
+Fulcher, Shpitser, Marealle \& Tchetgen Tchetgen (2020, JRSSB) & NIDP $=$
+  their ``bridge mean'' from population-intervention indirect effects; its
+  influence function and doubly-robust estimator &
+  \S\ref{sec:identification} & no \\
+Robins, Rotnitzky \& Zhao (1994); Hahn (1998) & Classical regression / IPW /
+  AIPW estimators & \S\ref{sec:estimation} & no \\
+Chernozhukov et al.\ (2018) & Cross-fitting / double ML &
+  \S\ref{sec:estimation} & no \\
+Rotnitzky \& Smucler (2020) & Efficient covariate-set theory (incl.\ Thm.\
+  19, factorization vs.\ adjustment) & \S\ref{sec:estimation},
+  \S\ref{sec:propagation} & no \\
+Takatsu \& Westling & Debiased local-linear estimator for smooth
+  dose-response curves & \S\ref{sec:continuous} & no \\
+Semenova \& Chernozhukov & Cross-fitted series estimator (smooth curve) &
+  \S\ref{sec:continuous} & no \\
+Kennedy et al.\ (2017) & Correct pseudo-outcome construction for the
+  smooth-curve estimator & \S\ref{sec:continuous} & no \\
+Bao \& Schomaker (2026) & Non-overlap ratio diagnostic &
+  \S\ref{sec:propagation} & no \\
+Cinelli \& Hazlett (2020) & Partial-$R^2$ sensitivity analysis / robustness
+  value & \S\ref{sec:propagation} & no \\
+Chernozhukov, Cinelli, Newey, Sharma \& Syrgkanis & Nonparametric
+  sensitivity bounds & \S\ref{sec:propagation} & no \\
+Bonvini et al.\ (2022); Marmarelis et al.\ (2023); Jesson et al.\ (2022);
+  Baitairian et al.\ (2025) & Sensitivity analysis for dose-response curves
+  generally, instantiated here with $Y^*=f(X)$ & \S\ref{sec:propagation} &
+  no \\
+Zhang \& Gao (2026); Gao \& Zhao (2024) & Related but distinct
+  semiparametric-inference-for-explainability work --- cited to delineate
+  what's \emph{not} new here & \S\ref{sec:scope} & no \\
+Maathuis, Kalisch \& B\"uhlmann (2009); Perkovi\'c (2020); Guo \&
+  Perkovi\'c (2021); Chang, Guo \& Malinsky (2025); Edgar \& Battey (2026);
+  Guo, Perkovi\'c \& Rotnitzky (2023) & Graph-uncertainty / IDA literature
+  --- Paper C scope, not this term & \S\ref{sec:scope} & no \\
+\bottomrule
+\caption{Bibliography and reuse tracker.}
+\label{tab:papers}
+\end{longtable}
+
+\emph{Other docs to fold in:} \texttt{docs/Trustworthy Causal Explanations
+\_ Joshua Loftus.docx.pdf} (likely broader motivation/framing --- not yet
+mapped to a row above); \texttt{docs/IML/...Partial Dependence Plot...html}
+(Molnar's PDP chapter --- good PDP intuition before tackling
+identification).

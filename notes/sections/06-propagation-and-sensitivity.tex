@@ -1,0 +1,66 @@
+\section{Adjustment vs.\ propagation, and sensitivity analysis}
+\label{sec:propagation}
+
+\emph{Source: handout \S1.5--1.6. Status: skeleton from a first read.}
+
+\subsection{Adjustment vs.\ propagation (\S1.5)}
+
+\newtag~study. Four arms compared: parents only; the efficient covariate set
+(\S\ref{sec:estimation}); an estimator exploiting the DAG's factorization;
+and full \textbf{parametric propagation} (fit every ECM structural equation,
+simulate --- what the \emph{original} CDP paper's method does).
+
+Findings to reproduce/understand, not just quote:
+\begin{itemize}
+  \item A confounder living entirely \textbf{downstream} (e.g.\ between
+    weight and blood pressure, independent of exercise) does \emph{not}
+    invalidate the parent-adjustment formula for the \emph{total} curve ---
+    the formula is right whether or not that confounder is drawn in the
+    graph. It changes the data (and so the curve), but adjustment still
+    recovers the right curve for whatever the data is. Propagation only
+    inherits this if its fitted conditionals match the observational ones
+    --- which holds \emph{exactly} for linear OLS (an algebraic identity:
+    fitted path coefficients always compose to the reduced-form slope) but
+    can fail for nonlinear $f$: a Gaussian propagation model can match the
+    mean and variance exactly and \emph{still} get $E[f]$ wrong (handout
+    cites a checked example: error $0.047$ with mean and variance exact).
+    \textbf{Nonlinearity is where propagation's extra assumptions can
+    bite.}
+  \item When the ECM's parametric equations are correct, propagation can be
+    \emph{more precise} and can extrapolate outside the region of data
+    overlap --- but that should be declared as model-based extrapolation,
+    not treated as free. Overlap is diagnosed via the \textbf{non-overlap
+    ratio} \reusetag{Bao \& Schomaker 2026}.
+  \item Whether exploiting the DAG's factorization can beat plain adjustment
+    at all is answered by \reusetag{Rotnitzky \& Smucler 2020, Thm.\ 19}.
+\end{itemize}
+
+\subsection{Sensitivity analysis (\S1.6)}
+
+Mostly \reusetag{Cinelli \& Hazlett 2020; nonparametric bounds: Chernozhukov,
+Cinelli, Newey, Sharma \& Syrgkanis}, \newtag~framing. If an unmeasured $U$
+affects $A$ \emph{and} a downstream feature that matters for $f$, it can
+bias the adjusted curve (special cases: the bias cancels, or $U$ turns out
+irrelevant to $f$). Uses \textbf{partial-$R^2$ sensitivity} to ask: how
+strong would $U$ need to be to flip the \textbf{slope} (never the level ---
+that depends on an arbitrary zero point), flatten the curve, or cross a
+threshold?
+
+Project-specific (\newtag) content: confounding parameterized \emph{per ECM
+edge}, with an exact map to the standard Cinelli--Hazlett coordinates (the
+``tipping strength'' is their robustness-value formula, just
+reparameterized); bounds at each bin; benchmarking against observed
+predictors; and cross-checking against the \S1.5 invariance result above.
+
+\begin{openquestions}
+  \item Handout marks ``propagation arm via DoWhy $+$ invariance
+    demonstrations'' as intern-feasible / moderate (\feasmod) --- a
+    plausible task once \S\ref{sec:identification}/\S\ref{sec:estimation}
+    basics are solid.
+  \item ``Robustness section: linear closed forms, planted confounders,
+    tipping, benchmarking'' is intern-feasible / moderate (\feasmod), with
+    binned Riesz bounds ``only if time allows'' --- i.e.\ a stretch goal,
+    not baseline scope.
+  \item Work the toy linear-OLS ``path coefficients compose to the
+    reduced-form slope'' identity by hand for the running example graph.
+\end{openquestions}

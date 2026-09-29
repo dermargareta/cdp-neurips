@@ -1,0 +1,372 @@
+\section{Assumed background}
+\label{sec:background}
+
+\emph{Source: handout preamble (``Assumed background: DAGs, the do-operator,
+backdoor adjustment, potential outcomes, regression, a little machine
+learning.'').} Everything from \S\ref{sec:bigpicture} onward leans on all six
+of these.
+
+\textbf{Running example}, used throughout: age $W \to$ exercise $A \to$
+weight $M \to$ blood pressure $R$; a model $f$ predicts 10-year
+cardiovascular risk, $\hat Y = f(X)$.
+
+\subsection{Notation}
+\label{sec:notation}
+
+A quick-reference table for every symbol used in these notes --- consult it
+whenever a formula reads ``obviously'' but isn't.
+
+\begin{longtable}{@{}p{3.0cm}p{10.2cm}@{}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+\endhead
+$W, A, M, R$ & The running example's features: age, exercise, weight,
+  blood pressure (in that causal order). \\
+$X$ & The full feature vector, e.g.\ $(W,A,M,R)$; $X_{-A}$ means ``all
+  features except $A$.'' \\
+$f$ & The fitted prediction model being explained (any learner). \\
+$\hat Y$ & The model's output, added to the causal graph as a node,
+  $\hat Y = f(X)$. \\
+$Y^*$ & The ``constructed outcome'' $f(X)$ treated as a variable for
+  causal-inference purposes --- the same quantity as $\hat Y$, written
+  differently depending on whether the point being made is graphical
+  ($\hat Y$) or statistical ($Y^*$). \\
+$P(\cdot)$, $P(dw)$ & A probability distribution; $P(dw)$ is shorthand for
+  integrating/summing against the distribution of $W$ (treat it as
+  ``weighted by how $W$ is actually distributed in the population''). \\
+$E[\cdot]$, $E_W[\cdot]$ & Expectation; a subscript names which variable's
+  distribution the average is taken over. \\
+$\operatorname{do}(A=a)$ & Pearl's do-operator: \emph{set} $A$ to $a$ by
+  intervention (delete the arrow into $A$), as opposed to conditioning on
+  $A=a$ in observational data (see below). \\
+$\perp$ & Statistical independence, e.g.\ $\{R(a)\}\perp A \mid W$ reads
+  ``independent of $A$, once you condition on $W$.'' \\
+$\theta(a)$ & The population target of a dependence plot at level $a$
+  (e.g.\ the average TDP, Eq.~\ref{eq:tdp-backdoor}). \\
+$\hat\theta(a)$ & An \emph{estimator} of $\theta(a)$ from data. A hat over
+  any symbol ($\hat\mu$, $\hat\pi$, $\hat{\mathrm{se}}$, \dots) always means
+  ``estimated from a finite sample,'' as opposed to the population quantity
+  underneath it. \\
+$\mu(a,z)$ & The outcome regression, $E[Y^* \mid A=a, Z=z]$
+  (\S\ref{sec:estimation}). \\
+$\pi(a\mid z)$ & The propensity/treatment regression, $P(A=a\mid Z=z)$
+  (\S\ref{sec:estimation}). \\
+$Z$ & A generic adjustment/covariate set (e.g.\ the parents $W$, or a
+  larger valid set) --- kept as a separate letter from the running
+  example's $W,M,R$ so formulas stay general across choices of adjustment
+  set. \\
+$Q(dr\mid a,w)$ & The \textbf{reduced form}: the conditional law of the
+  non-parent features given $(A,W)$ (\S\ref{sec:identification}). \\
+$\Psi(a)$ & The \textbf{bridge mean} $E[Y(A,Z(a))]$ that the NIDP turns out
+  to equal (\S\ref{sec:identification}). \\
+$\sqrt{n}$ (rate) & Shorthand for ``a regular estimator whose error shrinks
+  like $1/\sqrt n$'' --- the standard, non-exotic rate that licenses
+  ordinary $\hat\theta \pm 1.96\,\hat{\mathrm{se}}$ confidence intervals. \\
+$o_p(n^{-1/2})$ & ``Shrinks faster than $1/\sqrt n$, in probability'' ---
+  the condition cross-fitting needs the \emph{product} of two nuisance
+  errors to satisfy (\S\ref{sec:estimation}). \\
+$g_k(a)$, $B_k$, $\psi_k$ & A bin's fixed weight function, the bin itself,
+  and the resulting bin target $\psi_k = \int_{B_k}\theta(a)g_k(a)\,da$
+  (\S\ref{sec:continuous}). \\
+$K_h$, $\theta_h$ & A smoothing kernel at bandwidth $h$, and the resulting
+  smoothed curve $\theta_h = K_h * \theta$ (\S\ref{sec:continuous}). \\
+$J(a)$ & The interaction remainder in
+  $\theta(a)-B = [\mathrm{NDDP}(a)-B]+[\mathrm{NIDP}(a)-B]+J(a)$
+  (\S\ref{sec:bigpicture}). \\
+Partial-$R^2$ & The fraction of otherwise-unexplained variance an
+  unmeasured confounder $U$ would need to explain to matter --- the
+  currency of the sensitivity analysis in \S\ref{sec:propagation}. \\
+\bottomrule
+\caption{Notation used throughout these notes.}
+\label{tab:notation}
+\end{longtable}
+
+\begin{quote}
+\textbf{Watch for this overload:} the handout reuses the letter $R$ for two
+different things. In the running example, $R$ is \emph{blood pressure}. But
+in \S\ref{sec:identification}'s general identification result, $R$ denotes
+``the features other than $A$ and its parents $W$'' --- which in the
+running example is actually the \emph{pair} $(M, \text{blood pressure})$
+together, not blood pressure alone (weight $M$ is also a non-parent of
+$A$). Read $R$ as ``blood pressure'' in running-example prose, and as ``the
+generic non-parent remainder'' inside reduced-form formulas --- the handout
+doesn't distinguish them notationally, so context has to.
+\end{quote}
+
+\subsection{DAGs (directed acyclic graphs)}
+
+Nodes are variables, arrows are \emph{direct} causal effects (relative to
+the other variables drawn), and ``acyclic'' means no sequence of arrows
+loops back to its start. The \textbf{ECM} (explanatory causal model) in this
+project is exactly such a graph over the model's features --- an assumption
+brought to the explanation, not something derived from $f$ itself.
+
+Vocabulary this project actually uses:
+\begin{itemize}
+  \item \textbf{Parents} of $A$: nodes with an arrow directly into $A$
+    (here, just $W$).
+  \item \textbf{Descendants} of $A$: everything reachable by following
+    arrows \emph{out} of $A$ (here, $M$, $R$, $\hat Y$).
+  \item \textbf{Non-descendants} of $A$: everything else (here, $W$, plus
+    anything upstream of or unrelated to $A$) --- the exact set
+    \S\ref{sec:estimation}'s covariate-selection result is about.
+  \item \textbf{Backdoor path}: a path between $A$ and the outcome that
+    starts with an arrow \emph{into} $A$ (i.e.\ runs through a common
+    cause) --- the confounding path adjustment needs to block.
+\end{itemize}
+
+One caution worth internalizing early: conditioning on the wrong node can
+\emph{create} bias rather than remove it (classically, conditioning on a
+\textbf{collider} --- a node two arrowheads point into). This is why ``valid
+adjustment set'' is a precise graph-theoretic notion (Pearl's backdoor
+criterion, next), not just ``control for everything measured.''
+
+\subsection{The do-operator}
+
+Notation $\operatorname{do}(A=a)$: \emph{set} $A$ to $a$ by intervention, as
+opposed to \emph{observing} $A=a$ in data that happened to be collected.
+The distinction matters whenever $A$ shares a common cause with the outcome:
+
+\begin{itemize}
+  \item $P(R \mid A=a)$ --- among people who happen to exercise at level
+    $a$ (contaminated by whatever else predicts exercising at that level,
+    e.g.\ age).
+  \item $P(R \mid \operatorname{do}(A=a))$ --- if everyone were \emph{forced}
+    to exercise at level $a$ (severs whatever normally determines $A$, so no
+    contamination).
+\end{itemize}
+
+Graphically, $\operatorname{do}(A=a)$ means: delete every arrow \emph{into}
+$A$ (its value no longer depends on its natural causes), then let everything
+else propagate forward as usual. This is exactly what the TDP diagram in
+Figure~\ref{fig:four-plots} (\S\ref{sec:bigpicture}) draws as a severed edge
+--- TDP and PCDP are literally this operation applied to the ECM.
+
+\subsection{Backdoor adjustment}
+
+\paragraph{What confounding actually is.} Age has \emph{two separate}
+effects here: it affects blood pressure directly (general aging, nothing
+to do with exercise), and it also affects how much people exercise (for
+whatever reason --- older people might exercise more or less than younger
+people). Because age drives \emph{both} exercise and blood pressure, a
+naive comparison of blood pressure between high- and low-exercisers picks
+up two things tangled together: (1) whatever blood pressure difference
+exercise itself actually causes, and (2) a spurious difference that's
+really just age showing up twice --- once through its direct effect on
+blood pressure, once through its effect on who ends up exercising how
+much. That second, spurious piece is \textbf{confounding}: age
+\emph{confounds} the naive exercise--blood-pressure comparison.
+Graphically, it's exactly a \textbf{backdoor path} (\S1.2 above): the path
+exercise $\leftarrow$ age $\to$ blood pressure connects exercise and blood
+pressure without exercise having to cause anything, simply because they
+share a cause.
+
+\paragraph{Why we bother with the marginal-averaging trick.} We don't want
+``the correlation between exercise and blood pressure among whoever
+happens to be at each exercise level'' (that's contaminated by age, per
+above) --- we want ``what blood pressure would look like if the \emph{same}
+population, with the \emph{same} age makeup, were compared at different
+exercise levels.'' Forcing every exercise level to be evaluated against the
+identical, population-wide age distribution (the $P(W=w)$ in
+Eq.~\ref{eq:backdoor} below) is precisely how you strip out age's
+contribution and isolate exercise's own effect. This is \emph{why} we do
+the adjustment at all, not just how.
+
+The bridge from an interventional question to something estimable from
+observational data. \textbf{Backdoor criterion}: a covariate set $W$ is
+\emph{valid for adjustment} if (a) it contains no descendant of $A$, and
+(b) it blocks every backdoor path from $A$ to the outcome.
+
+\paragraph{What ``valid'' buys you, and what goes wrong without it.}
+``Valid'' means exactly this: plug $W$ into the formula below, and you get
+the \emph{correct} causal quantity $P(R\mid\operatorname{do}(A=a))$ ---
+not just some number, the right one. Each half of the criterion guards
+against a specific way of getting a \emph{wrong} number instead:
+\begin{itemize}
+  \item \textbf{Violating (b)} --- a backdoor path left unblocked --- means
+    some confounding is still in the room. If there were a second
+    confounder, say socioeconomic status $S$, that also affects both
+    exercise and blood pressure, and you adjusted only for age (not $S$),
+    the path exercise $\leftarrow S \to$ blood pressure would still be
+    open. The ``adjusted'' number would still be contaminated by $S$,
+    exactly as in the naive calculation above, just by a different amount.
+  \item \textbf{Violating (a)} --- including a descendant of $A$ --- can go
+    wrong two ways. If the descendant is something $A$ causes on the way
+    to the outcome (a \emph{mediator}, like weight $M$, when what you want
+    is the \emph{total} effect), conditioning on it blocks part of the very
+    effect you're trying to measure --- you'd end up computing something
+    closer to a direct effect than a total one. If the descendant is a
+    \textbf{collider} (something caused by both $A$ and something else),
+    conditioning on it can manufacture a spurious association that wasn't
+    there to begin with.
+\end{itemize}
+When both (a) and (b) hold, the formula
+\begin{equation}
+  P(R \mid \operatorname{do}(A=a)) \;=\; \sum_w P(R \mid A=a, W=w)\, P(W=w)
+  \label{eq:backdoor}
+\end{equation}
+is \emph{guaranteed} to equal the true interventional quantity --- that
+guarantee is the entire content of ``valid.''
+
+\emph{In words:} to get blood pressure's distribution under a forced
+exercise level $a$, go age group by age group ($w$), look at blood pressure
+among the people who actually exercised at level $a$ within that age group
+($P(R\mid A=a,W=w)$), and then combine those age-group numbers into one
+overall number by weighting each age group by how common it actually is in
+the population ($P(W=w)$) --- not by how common it is among people who
+exercise at level $a$.
+
+The crucial move: average over the \textbf{marginal} distribution of $W$
+(the actual population mix), not the distribution of $W$ \emph{among people
+at $A=a$} --- that second thing is what a naive $E[R\mid A=a]$ implicitly
+does, and it is exactly where confounding sneaks back in.
+
+\paragraph{Worked toy version of the running example.} Say age is 50\% young
+/ 50\% old \emph{in the population overall} --- i.e.\ combining the
+high-exercise and low-exercise groups together, not within each group
+separately. (In real data the age mix \emph{inside} the high-exercise group
+could easily be, say, 70\% old / 30\% young if older people tend to
+exercise more --- that mismatch between each group's own age mix and the
+population's age mix is precisely the confounding the adjustment below is
+designed to remove.) And (invented purely to illustrate) blood pressure is
+as in Table~\ref{tab:toy-backdoor}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\toprule
+ & high exercise & low exercise \\
+\midrule
+young & 110 & 120 \\
+old   & 130 & 150 \\
+\bottomrule
+\end{tabular}
+\caption{Toy blood-pressure cell means by age and exercise level.}
+\label{tab:toy-backdoor}
+\end{table}
+
+Adjusted:
+\begin{align*}
+  \text{high exercise} &: 0.5(110) + 0.5(130) = 120 \\
+  \text{low exercise}  &: 0.5(120) + 0.5(150) = 135
+\end{align*}
+\emph{In words:} for ``high exercise,'' take the blood pressure of a young
+high-exerciser (110) and the blood pressure of an old high-exerciser (130),
+and average them \emph{using the population's actual 50/50 age split} ---
+not whatever age split happens to show up among the high-exercisers in the
+data. Do the same for ``low exercise.'' This gives a clean $-15$ causal contrast, because both numbers are averaged over
+the \emph{same} 50/50 age split. A naive $E[BP \mid A{=}\text{high}]$ vs.\
+$E[BP \mid A{=}\text{low}]$ would instead average each group over
+\emph{its own} age mix (however age happens to correlate with exercise in
+the data).
+
+\paragraph{Making the naive number concrete.} Suppose that, because older
+people happen to exercise less in this data, the high-exercise group is
+actually 80\% young / 20\% old, and the low-exercise group is 20\% young /
+80\% old (this is the confounding: each group's own age mix differs from
+the population's 50/50). The naive, unadjusted comparison uses \emph{each
+group's own} age mix:
+\begin{align*}
+  \text{naive } E[BP\mid A{=}\text{high}] &= 0.8(110) + 0.2(130) = 114 \\
+  \text{naive } E[BP\mid A{=}\text{low}]  &= 0.2(120) + 0.8(150) = 144
+\end{align*}
+giving a naive contrast of $114-144=-30$ --- \emph{twice as large} as the
+true $-15$ causal effect computed above. The extra $-15$ is pure
+confounding: high-exercisers look even better than they really are (via
+exercise) partly because they also skew younger, and younger people have
+lower blood pressure regardless of how much they exercise. Adjustment
+(forcing both groups to be evaluated at the same 50/50 age split) removes
+exactly that extra piece, leaving only exercise's own effect.
+
+\paragraph{Why parents specifically?} The set of all parents of $A$ always
+satisfies the backdoor criterion: any path into $A$ must pass through one of
+$A$'s parents immediately before reaching it, so conditioning on all parents
+blocks every such path. That is why the handout's core formula
+($\theta(a) = E_W[E[Y^* \mid A=a, W]]$, $W = $ parents of $A$; see
+\S\ref{sec:bigpicture}) can use \emph{just} the parents --- and why
+\S\ref{sec:estimation} can then ask whether a \emph{larger} valid set (all
+non-descendants) does better on variance, without needing a different
+formula.
+
+One distinction worth keeping crisp: \textbf{valid is not the same as
+best.} Multiple different sets can each be valid (each plugs into
+Eq.~\ref{eq:backdoor} and gives the exact correct number) while differing
+in how \emph{precisely} that number can be estimated from a finite sample
+--- that's the ``efficient set'' question in \S\ref{sec:estimation}, a
+separate question from validity.
+
+\subsection{Potential outcomes}
+
+An equivalent (Neyman--Rubin) way of stating the same thing in terms of
+per-person counterfactuals rather than graph surgery. For person $i$, posit
+$R_i(a)$ = ``the blood pressure person $i$ would have had if their exercise
+had been set to $a$'' --- only the value at their \emph{actual} $A_i$ is ever
+observed; the rest are counterfactual.
+
+Assumptions this needs (same substance as the backdoor criterion, different
+language):
+\begin{itemize}
+  \item \textbf{Consistency}: $R_i(A_i) = R_i$ --- the potential outcome at
+    the observed treatment equals what was actually seen.
+  \item \textbf{Ignorability / unconfoundedness}: $\{R(a)\} \perp A \mid W$
+    --- treatment is ``as good as randomly assigned'' once conditioned on
+    $W$.
+  \item \textbf{Positivity / overlap}: every stratum of $W$ has some chance
+    of any $A$-level occurring in the data, $0 < P(A=a\mid W=w) < 1$ --- what
+    \S\ref{sec:propagation}'s ``non-overlap ratio'' diagnostic checks.
+\end{itemize}
+
+Why this project needs it beyond the simple $R(a)$: the \textbf{NIDP} is a
+``bridge mean'' $\Psi(a) = E[Y(A, Z(a))]$ --- a \emph{nested} potential
+outcome, mixing a person's actual $A$ with the downstream features $Z$ set to
+where they would be under a hypothetical $A=a$. That is genuinely
+potential-outcomes language, not something the do-operator alone writes down
+as easily --- see \S\ref{sec:identification}.
+
+\subsection{Regression}
+
+The tool that actually gets fit to data once identification says \emph{what}
+to estimate. Two regressions do essentially all the work in
+\S\ref{sec:estimation}:
+\begin{itemize}
+  \item \textbf{Outcome regression} $\mu(a,z) = E[Y^* \mid A=a, Z=z]$.
+  \item \textbf{Propensity / treatment regression} $\pi(a\mid z) = P(A=a\mid Z=z)$.
+\end{itemize}
+AIPW combines both (and is right if \emph{either} is estimated well).
+``Regression'' here can mean anything from OLS to a random forest --- which
+is exactly why cross-fitting (train/evaluate on separate splits) is needed
+once flexible, ML-grade regressions are used for $\hat\mu$ and $\hat\pi$ and
+a valid confidence interval is still wanted.
+
+\subsection{A little machine learning}
+
+$f$ is ``any learner'' --- linear model, random forest, neural net, whatever
+was fit to predict cardiovascular risk. This project treats $f$ as a
+\textbf{black box}, queried only by feeding it synthetic inputs and reading
+off predictions (never inspecting its internals) --- that is what makes CDPs
+``model-agnostic.''
+
+Two ML facts turn into project rules, not just background color:
+\begin{itemize}
+  \item Flexible learners can nearly reproduce their own training outcomes
+    (a forest is a classic case) --- this is \emph{why}
+    \S\ref{sec:scope} insists explanatory curves are drawn on data $f$ never
+    trained on.
+  \item A learner that \textbf{splits on $A$} (e.g.\ a tree) can make the
+    true dependence curve $\theta$ itself jumpy/discontinuous in $a$ --- this
+    is \emph{why} \S\ref{sec:continuous} treats the smooth-curve estimator as
+    needing an extra smoothness assumption a jumpy $\theta$ would violate.
+\end{itemize}
+
+\begin{openquestions}
+  \item Work the toy backdoor-adjustment arithmetic above with actual
+    made-up individual-level data (not just cell means) to see the
+    confounded vs.\ adjusted contrast come out of a regression fit, not a
+    hand calculation.
+  \item Pin down precisely how positivity/overlap (potential-outcomes
+    language) and the graph's positivity condition
+    (\S\ref{sec:estimation}: ``the population positivity condition doesn't
+    get harder'' when adjusting on more covariates) are the same statement
+    in two vocabularies.
+\end{openquestions}

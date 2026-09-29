@@ -1,0 +1,73 @@
+\section{Estimation: AIPW, cross-fitting, and which covariates to adjust for}
+\label{sec:estimation}
+
+\emph{Source: handout \S1.2--1.3. Status: skeleton from a first read.}
+
+\subsection{Estimating one level, discrete \texorpdfstring{$A$}{A} (\S1.2, mostly REUSE)}
+
+Three classical estimators (Robins/Rotnitzky/Zhao 1994; Hahn 1998):
+regression (regress $Y^*$ on $(A,Z)$, average), inverse-propensity
+weighting, or \textbf{AIPW}, which combines both and is \emph{doubly
+robust} --- consistent if \emph{either} piece is right:
+\begin{equation}
+  \hat\theta(a) \;=\; \frac{1}{n}\sum_{i=1}^n \left[
+    \frac{\mathbf{1}(A_i=a)}{\hat\pi(a\mid Z_i)}\big(Y_i^* - \hat\mu(a,Z_i)\big)
+    + \hat\mu(a,Z_i) \right].
+  \label{eq:aipw}
+\end{equation}
+\emph{In words, person by person:} start with the regression's best guess
+for person $i$'s outcome if they'd had exercise level $a$, given their
+covariates ($\hat\mu(a,Z_i)$ --- this term alone is used for everyone). Then,
+\emph{only for the people who actually did exercise at level $a$}
+($\mathbf{1}(A_i=a)$ switches this next part on or off), add a correction:
+how far their real outcome was from that regression guess
+($Y_i^* - \hat\mu(a,Z_i)$), inflated by how rare it was for someone with
+their covariates to end up at exercise level $a$
+($1/\hat\pi(a\mid Z_i)$ --- rarer means a bigger correction, since that
+person is doing more work standing in for others like them). Average this
+person-by-person quantity over everyone, and that's $\hat\theta(a)$. The
+``doubly robust'' part: if $\hat\mu$ is wrong but $\hat\pi$ is right, the
+correction term fixes it on average; if $\hat\pi$ is wrong but $\hat\mu$ is
+right, the correction term is small anyway because the regression guess was
+already good.
+
+\textbf{Cross-fitting} \reusetag{Chernozhukov et al.\ 2018}: fit
+$\hat\mu, \hat\pi$ on one data half, evaluate on the other, swap. This lets
+flexible ML be used for the nuisance functions while still getting a valid
+Wald interval $\hat\theta(a) \pm 1.96\,\widehat{\mathrm{se}}$, \emph{provided}
+the two nuisance errors shrink fast enough \emph{jointly} (their product
+must be $o_p(n^{-1/2})$). Cross-fitting removes a technical condition, not
+the underlying accuracy requirement --- a common misreading to watch for.
+
+\subsection{Which covariates \texorpdfstring{$Z$}{Z} to adjust for (\S1.3)}
+
+\reusetag{Rotnitzky \& Smucler 2020}, \newtag~application. The parents $W$
+are a \emph{valid} adjustment set but not necessarily the lowest-variance
+one. Adding non-descendants of $A$ that help predict $Y^*$ lowers variance
+without changing the answer (same logic as good covariates in a randomized
+trial).
+
+\textbf{Key result:} when $f$ uses all features, the set of \emph{all
+non-descendants of $A$} is never worse than any other valid set in large
+samples (among the adjustment estimators used here). Two practical facts:
+\begin{enumerate}[label=(\alph*)]
+  \item The \emph{population} positivity condition does not get harder ---
+    because $P(a \mid \text{non-descendants}) = P(a \mid W)$ by the graph.
+    What gets harder is \emph{fitting} a bigger regression in finite
+    samples. So: \textbf{fit the propensity on $W$, fit the outcome
+    regression on the larger set.}
+  \item This result uses only the graph's \emph{arrows} --- never its
+    equations. (The handout notes this was verified exhaustively on small
+    graphs in the review --- a good sanity-check exercise to redo.)
+\end{enumerate}
+
+\begin{openquestions}
+  \item Work through \emph{why} adding non-descendants can only help (not
+    hurt) asymptotic variance --- is there a clean intuition beyond ``more
+    relevant predictors of $Y^*$ reduce residual variance''?
+  \item Handout \S1.9 marks ``cross-fitted AIPW at discrete levels; coverage
+    on oracle testbed'' as intern-feasible / moderate supervision
+    (\feasmod), and ``parents vs.\ efficient set (variance drop)'' likewise
+    --- plausible first coding tasks once toy-SCM verification
+    (\S\ref{sec:identification}) is done.
+\end{openquestions}
