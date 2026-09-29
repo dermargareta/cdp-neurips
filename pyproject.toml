@@ -5,14 +5,21 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "dowhy>=0.14",
+    "cdt>=0.6.0",
+    "dowhy",
     "ipykernel>=7.4.0",
     "matplotlib>=3.11.2",
     "networkx>=3.7",
     "numpy>=2.5.3",
     "pandas>=3.0.6",
+    "pyale>=1.2.0",
     "scikit-learn>=1.9.1",
     "scipy>=1.18.1",
-    "scmtools>=0.0.8",
+    "scmtools==0.0.4",
+    "seaborn>=0.13.2",
+    "shap>=0.52.0",
     "tqdm>=4.70.1",
 ]
+
+[tool.uv.sources]
+dowhy = { git = "https://github.com/py-why/dowhy.git", rev = "9930609212736449eb1c248440228479e4f99bf4" }
