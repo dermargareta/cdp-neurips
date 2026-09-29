@@ -1,0 +1,18 @@
+[project]
+name = "cdp-neurips"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "dowhy>=0.14",
+    "ipykernel>=7.4.0",
+    "matplotlib>=3.11.2",
+    "networkx>=3.7",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
+    "scikit-learn>=1.9.1",
+    "scipy>=1.18.1",
+    "scmtools>=0.0.8",
+    "tqdm>=4.70.1",
+]
